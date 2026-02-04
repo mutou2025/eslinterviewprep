@@ -272,19 +272,25 @@ async function main() {
         categoriesSet.add(card.categoryL3Id)
     })
 
-    const categories = [
-        { id: 'technical', level: 1 as const, name: '技术面试', nameEn: 'Technical Interview' },
-        { id: 'behavioral', level: 1 as const, name: '行为面试', nameEn: 'Behavioral Interview' },
-        { id: 'web-frontend', level: 2 as const, name: 'Web前端', nameEn: 'Web Frontend', parentId: 'technical' },
-        { id: 'algorithm', level: 2 as const, name: '算法', nameEn: 'Algorithm', parentId: 'technical' },
-    ]
+    const categories: Array<{
+        id: string
+        level: 1 | 2 | 3
+        name: string
+        nameEn?: string
+        parentId?: string
+    }> = [
+            { id: 'technical', level: 1, name: '技术面试', nameEn: 'Technical Interview' },
+            { id: 'behavioral', level: 1, name: '行为面试', nameEn: 'Behavioral Interview' },
+            { id: 'web-frontend', level: 2, name: 'Web前端', nameEn: 'Web Frontend', parentId: 'technical' },
+            { id: 'algorithm', level: 2, name: '算法', nameEn: 'Algorithm', parentId: 'technical' },
+        ]
 
     // 添加 L3 分类
     categoriesSet.forEach(l3Id => {
         const config = Object.values(CATEGORY_MAP).find(c => c.l3Id === l3Id)
         categories.push({
             id: l3Id,
-            level: 3 as const,
+            level: 3,
             name: config?.l3Name || l3Id,
             parentId: 'web-frontend'
         })

@@ -174,7 +174,7 @@ export default function CategoryPage() {
                                                 {card.question}
                                             </p>
                                             <p className="text-gray-500 text-sm line-clamp-2">
-                                                {card.answer.replace(/[#*`\n]/g, ' ').slice(0, 120)}...
+                                                {(card.answer || '').replace(/[#*`\n]/g, ' ').slice(0, 120)}...
                                             </p>
                                         </Link>
 
