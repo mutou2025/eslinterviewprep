@@ -1,6 +1,7 @@
-import { db } from './db'
 import type { ReviewSession, ReviewFilters, Card } from '@/types'
 import { generateReviewQueue } from './scheduler'
+import { getSupabaseClient } from './supabase-client'
+import { getAllCardSummariesWithOverrides } from './data-service'
 
 const SESSION_DEBOUNCE_MS = 500
 let saveTimeout: ReturnType<typeof setTimeout> | null = null
@@ -21,10 +22,7 @@ export function saveSession(session: ReviewSession): void {
     }
 
     saveTimeout = setTimeout(async () => {
-        await db.sessions.put({
-            ...session,
-            updatedAt: new Date()
-        })
+        await saveSessionImmediate(session)
     }, SESSION_DEBOUNCE_MS)
 }
 
@@ -36,9 +34,20 @@ export async function saveSessionImmediate(session: ReviewSession): Promise<void
         clearTimeout(saveTimeout)
         saveTimeout = null
     }
-    await db.sessions.put({
-        ...session,
-        updatedAt: new Date()
+
+    const supabase = getSupabaseClient()
+    const { data } = await supabase.auth.getUser()
+    if (!data.user) return
+
+    await supabase.from('review_sessions').upsert({
+        id: session.id,
+        user_id: data.user.id,
+        scope: session.scope,
+        mode: session.mode,
+        queue_card_ids: session.queueCardIds,
+        cursor: session.cursor,
+        filters: session.filters,
+        updated_at: new Date().toISOString()
     })
 }
 
@@ -50,9 +59,29 @@ export async function restoreSession(
     mode: 'qa' | 'code' | 'mix'
 ): Promise<ReviewSession | null> {
     const sessionId = generateSessionId(scope, mode)
-    const session = await db.sessions.get(sessionId)
 
-    if (!session) return null
+    const supabase = getSupabaseClient()
+    const { data } = await supabase.auth.getUser()
+    if (!data.user) return null
+
+    const { data: sessionRow } = await supabase
+        .from('review_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .eq('user_id', data.user.id)
+        .maybeSingle()
+
+    if (!sessionRow) return null
+
+    const session: ReviewSession = {
+        id: sessionRow.id,
+        scope: sessionRow.scope,
+        mode: sessionRow.mode,
+        queueCardIds: sessionRow.queue_card_ids || [],
+        cursor: sessionRow.cursor ?? 0,
+        filters: (sessionRow.filters as ReviewFilters) || getDefaultFilters(),
+        updatedAt: sessionRow.updated_at ? new Date(sessionRow.updated_at) : new Date()
+    }
 
     // 验证会话中的卡片是否仍然存在
     const validatedSession = await validateSession(session)
@@ -64,9 +93,8 @@ export async function restoreSession(
  * 验证会话（过滤已删除卡片，修正 cursor）
  */
 async function validateSession(session: ReviewSession): Promise<ReviewSession> {
-    const existingCardIds = new Set(
-        (await db.cards.toArray()).map(c => c.id)
-    )
+    const cards = await getAllCardSummariesWithOverrides()
+    const existingCardIds = new Set(cards.map(c => c.id))
 
     // 过滤不存在的卡片
     const validCardIds = session.queueCardIds.filter(id => existingCardIds.has(id))
@@ -118,7 +146,14 @@ export async function createSession(
  */
 export async function deleteSession(scope: string, mode: string): Promise<void> {
     const sessionId = generateSessionId(scope, mode)
-    await db.sessions.delete(sessionId)
+    const supabase = getSupabaseClient()
+    const { data } = await supabase.auth.getUser()
+    if (!data.user) return
+
+    await supabase.from('review_sessions')
+        .delete()
+        .eq('id', sessionId)
+        .eq('user_id', data.user.id)
 }
 
 /**

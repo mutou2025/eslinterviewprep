@@ -18,7 +18,8 @@
 | 框架 | Next.js 16 (App Router) |
 | 语言 | TypeScript |
 | 样式 | Tailwind CSS |
-| 数据库 | IndexedDB (Dexie.js) - 本地优先 |
+| 数据库 | Supabase (PostgreSQL + Auth + RLS) |
+| 本地缓存 | IndexedDB (Dexie.js) - 题库摘要缓存 |
 | 状态管理 | React Hooks + Zustand |
 | Markdown 渲染 | react-markdown + rehype-highlight |
 | 图标 | Lucide React |
@@ -44,11 +45,18 @@
 - 批量学习选中题目
 - 点击进入题目详情页
 - 分类筛选和搜索
+- 分页/按需加载（列表页不拉全文）
+- 答案延迟加载（翻面或点击才拉）
 
 ### 4. 数据同步
-- 从 GitHub 自动同步上游题库 (febobo/web-interview, sudheerj/reactjs-interview-questions)
-- 首次访问自动初始化数据
-- 用户修改保存到本地 Override
+- 从 GitHub 同步上游题库（本地生成 `public/data/upstream.json`）
+- 题库导入到 Supabase（管理员权限）
+- 题库摘要缓存到 IndexedDB，增量同步（基于 `updated_at`）
+
+### 5. 用户体系与多端同步
+- Supabase Auth（邮箱注册/登录）
+- 用户学习状态云端存储（掌握度/复习日志/列表/会话）
+- 基于 RLS 的数据隔离
 
 ---
 
@@ -58,6 +66,8 @@
 interview-flashcards/
 ├── src/
 │   ├── app/
+│   │   ├── api/import-upstream/route.ts # 题库导入 API（管理员）
+│   │   ├── login/page.tsx               # 登录/注册
 │   │   ├── dashboard/page.tsx          # 仪表盘
 │   │   ├── library/
 │   │   │   ├── page.tsx                 # 题库列表
@@ -82,14 +92,18 @@ interview-flashcards/
 │   │   ├── MasteryBadge.tsx             # 掌握度徽章
 │   │   └── DataInitializer.tsx          # 数据初始化
 │   ├── lib/
-│   │   ├── db.ts                        # IndexedDB 数据库
-│   │   ├── sync-service.ts              # 客户端同步服务
-│   │   └── spaced-repetition.ts         # 间隔复习算法
+│   │   ├── data-service.ts              # Supabase 数据访问层
+│   │   ├── card-cache.ts                # 题库摘要缓存
+│   │   ├── supabase-client.ts           # Supabase 客户端
+│   │   ├── supabase-server.ts           # Supabase 服务端
+│   │   └── scheduler.ts                 # 间隔复习算法
 │   └── types/index.ts                   # TypeScript 类型定义
 ├── scripts/
 │   └── sync-upstream.ts                 # 上游数据同步脚本
 └── data/
     └── upstream.json                    # 同步的题库数据
+└── public/
+    └── data/upstream.json               # CDN/静态题库数据
 ```
 
 ---
@@ -108,25 +122,42 @@ interview-flashcards/
 
 ## 数据模型
 
-### Card (题目卡片)
+### Cards (题库，公共)
 ```typescript
 interface Card {
   id: string
   source: 'upstream' | 'user'
-  categoryL1Id: string  // 技术面试 / 行为面试
-  categoryL2Id: string  // Web前端 / 算法
-  categoryL3Id: string  // react / javascript
+  categoryL1Id: string
+  categoryL2Id: string
+  categoryL3Id: string
   title: string
   question: string
   answer?: string
   questionType: 'concept' | 'coding' | 'output' | 'debug' | 'scenario' | 'design'
   difficulty: 'easy' | 'must-know' | 'hard' | 'hand-write'
   frequency: 'high' | 'mid' | 'low'
+}
+```
+
+### User State (每用户学习状态)
+```typescript
+interface CardOverride {
+  userId: string
+  cardId: string
   mastery: 'new' | 'fuzzy' | 'can-explain' | 'solid'
   reviewCount: number
   intervalDays: number
   dueAt: Date
+  lastReviewedAt?: Date
 }
+```
+
+### Lists / Sessions / Logs / Subscriptions
+```typescript
+CardList { id, userId, name, cardIds, isDefault }
+ReviewSession { id, userId, scope, mode, queueCardIds, cursor, filters }
+ReviewLog { id, userId, cardId, reviewedAt, previousMastery, newMastery }
+Subscription { userId, status, plan, currentPeriodEnd }
 ```
 
 ---
@@ -146,21 +177,33 @@ npm run sync
 
 ---
 
+## 环境变量（本地/部署）
+
+```
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+---
+
 ## 已完成功能清单
 
 - [x] Next.js 项目初始化
-- [x] IndexedDB 数据层 (Dexie.js)
+- [x] Supabase 数据层（PostgreSQL + Auth + RLS）
 - [x] 速记卡组件 (3D 翻转动画)
 - [x] 间隔复习算法
 - [x] 仪表盘页面
-- [x] 题库页面 (多选、搜索、筛选)
+- [x] 题库页面 (多选、搜索、筛选、分页)
 - [x] 题目详情页
 - [x] 分类详情页
 - [x] 列表管理页
 - [x] 复习模式
 - [x] 设置页面
 - [x] 从 GitHub 自动同步数据
-- [x] 首次访问自动初始化
+- [x] 题库导入 API（管理员）
+- [x] 答案延迟加载
+- [x] 题库摘要缓存（IndexedDB）
 - [x] 代码块语法高亮
 - [x] 翻转自动滚动
 - [x] SEO 优化 (meta、OpenGraph)
@@ -168,13 +211,19 @@ npm run sync
 - [x] 品牌更新 (北美面试通)
 - [x] Vercel 部署
 - [x] 自定义域名绑定
+- [x] 题库导入去重与诊断信息（避免重复主键导致导入失败）
+- [x] 题库为空时允许进入设置页导入
+- [x] 新增个人中心页面（账号信息/订阅状态/偏好设置）
+- [x] 侧边栏头像菜单（个人中心入口/退出登录）
+- [x] 偏好设置存数据库并多端同步（user_settings）
+- [x] profiles 扩展头像字段与注册时默认写入 user_settings
 
 ---
 
 ## 下一步优化建议
 
-1. **用户认证**: 添加 Supabase 或 NextAuth 支持多设备同步
-2. **后端存储**: 将数据迁移到 PostgreSQL
+1. **复习队列优化**: 服务端分页/队列续拉
+2. **全文检索**: Postgres/PGV 索引或外部搜索服务
 3. **AI 功能**: 集成 AI 生成答案解析
 4. **更多题库**: 添加 LeetCode、系统设计题目
 5. **移动端优化**: 响应式布局改进

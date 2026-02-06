@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Search, PlayCircle, CheckSquare, Square } from 'lucide-react'
 import { MasteryBadge } from '@/components/MasteryBadge'
-import { db, getAllCardsWithOverrides, initializeDefaultData } from '@/lib/db'
+import { createList, getCardSummariesPageCached, getCategories, initializeDefaultData } from '@/lib/data-service'
 import type { Card, Category } from '@/types'
 
 export default function LibraryPage() {
@@ -16,15 +16,15 @@ export default function LibraryPage() {
     const [selectedCategory, setSelectedCategory] = useState<string>('')
     const [isLoading, setIsLoading] = useState(true)
     const [selectedCards, setSelectedCards] = useState<Set<string>>(new Set())
+    const [page, setPage] = useState(1)
+    const [total, setTotal] = useState(0)
+    const pageSize = 40
 
     useEffect(() => {
         async function loadData() {
             await initializeDefaultData()
 
-            const allCards = await getAllCardsWithOverrides()
-            setCards(allCards)
-
-            const cats = await db.categories.where('level').equals(3).toArray()
+            const cats = await getCategories(3)
             setCategories(cats)
 
             setIsLoading(false)
@@ -32,66 +32,69 @@ export default function LibraryPage() {
         loadData()
     }, [])
 
-    // 过滤卡片
-    const filteredCards = cards.filter(card => {
-        const matchesSearch = searchQuery === '' ||
-            card.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            card.question.toLowerCase().includes(searchQuery.toLowerCase())
+    useEffect(() => {
+        async function loadCards() {
+            setIsLoading(true)
+            const result = await getCardSummariesPageCached({
+                page,
+                pageSize,
+                search: searchQuery,
+                categoryL3Id: selectedCategory || undefined
+            })
+            setCards(result.cards)
+            setTotal(result.total)
+            setIsLoading(false)
+        }
+        loadCards()
+    }, [page, pageSize, searchQuery, selectedCategory])
 
-        const matchesCategory = selectedCategory === '' ||
-            card.categoryL3Id === selectedCategory
-
-        return matchesSearch && matchesCategory
-    })
-
-    // 切换单个卡片选择
-    const toggleCard = (e: React.MouseEvent, cardId: string) => {
+    // 所有回调函数在 early return 之前定义
+    const toggleCard = useCallback((e: React.MouseEvent, cardId: string) => {
         e.stopPropagation()
-        const newSelected = new Set(selectedCards)
-        if (newSelected.has(cardId)) {
-            newSelected.delete(cardId)
-        } else {
-            newSelected.add(cardId)
-        }
-        setSelectedCards(newSelected)
-    }
+        setSelectedCards(prev => {
+            const newSelected = new Set(prev)
+            if (newSelected.has(cardId)) {
+                newSelected.delete(cardId)
+            } else {
+                newSelected.add(cardId)
+            }
+            return newSelected
+        })
+    }, [])
 
-    // 全选/取消全选
-    const toggleSelectAll = () => {
-        if (selectedCards.size === filteredCards.length) {
-            setSelectedCards(new Set())
-        } else {
-            setSelectedCards(new Set(filteredCards.map(c => c.id)))
-        }
-    }
+    const toggleSelectAll = useCallback(() => {
+        setSelectedCards(prev => {
+            if (prev.size === cards.length) {
+                return new Set()
+            } else {
+                return new Set(cards.map(c => c.id))
+            }
+        })
+    }, [cards])
 
-    // 开始学习选中的题目
-    const startStudySelected = async () => {
+    const startStudySelected = useCallback(async () => {
         if (selectedCards.size === 0) return
 
         // 创建临时列表保存选中的卡片
-        const listId = `temp-${Date.now()}`
-        await db.lists.put({
-            id: listId,
-            name: `临时学习 (${selectedCards.size}题)`,
-            cardIds: Array.from(selectedCards),
-            createdAt: new Date(),
-            updatedAt: new Date()
-        })
+        const list = await createList(`临时学习 (${selectedCards.size}题)`, Array.from(selectedCards))
+        if (!list) return
 
         // 跳转到复习页面
-        router.push(`/review/qa?scope=list:${listId}`)
-    }
+        router.push(`/review/qa?scope=list:${list.id}`)
+    }, [selectedCards, router])
 
-    if (isLoading) {
+    // 计算派生状态
+    const isAllSelected = cards.length > 0 && selectedCards.size === cards.length
+    const totalPages = Math.max(1, Math.ceil(total / pageSize))
+
+    // 加载中状态
+    if (isLoading && cards.length === 0) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
             </div>
         )
     }
-
-    const isAllSelected = filteredCards.length > 0 && selectedCards.size === filteredCards.length
 
     return (
         <div className="p-8">
@@ -100,7 +103,7 @@ export default function LibraryPage() {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">题库</h1>
-                        <p className="text-gray-500 mt-1">{cards.length} 道面试题</p>
+                        <p className="text-gray-500 mt-1">{total} 道面试题</p>
                     </div>
                     <div className="flex items-center gap-3">
                         {selectedCards.size > 0 && (
@@ -130,13 +133,19 @@ export default function LibraryPage() {
                             type="text"
                             placeholder="搜索题目..."
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value)
+                                setPage(1)
+                            }}
                             className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                         />
                     </div>
                     <select
                         value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedCategory(e.target.value)
+                            setPage(1)
+                        }}
                         className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     >
                         <option value="">所有分类</option>
@@ -151,7 +160,10 @@ export default function LibraryPage() {
                     {categories.slice(0, 10).map(cat => (
                         <button
                             key={cat.id}
-                            onClick={() => setSelectedCategory(cat.id === selectedCategory ? '' : cat.id)}
+                            onClick={() => {
+                                setSelectedCategory(cat.id === selectedCategory ? '' : cat.id)
+                                setPage(1)
+                            }}
                             className={`px-3 py-1.5 text-sm rounded-full transition-colors ${cat.id === selectedCategory
                                 ? 'bg-indigo-600 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -163,7 +175,7 @@ export default function LibraryPage() {
                 </div>
 
                 {/* 全选按钮 */}
-                {filteredCards.length > 0 && (
+                {cards.length > 0 && (
                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
                         <button
                             onClick={toggleSelectAll}
@@ -185,14 +197,14 @@ export default function LibraryPage() {
                 )}
 
                 {/* 卡片列表 */}
-                {filteredCards.length === 0 ? (
+                {cards.length === 0 ? (
                     <div className="text-center py-12">
                         <p className="text-gray-500">暂无题目</p>
                         <p className="text-sm text-gray-400 mt-2">请运行同步脚本导入题库</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {filteredCards.map(card => {
+                        {cards.map(card => {
                             const isSelected = selectedCards.has(card.id)
                             return (
                                 <div
@@ -226,9 +238,7 @@ export default function LibraryPage() {
                                                     {card.title}
                                                 </span>
                                             </div>
-                                            <p className="text-gray-600 text-sm line-clamp-2">
-                                                {card.question.replace(/[#*`]/g, '').slice(0, 100)}...
-                                            </p>
+                                            <p className="text-gray-500 text-sm">点击查看详情</p>
                                         </Link>
 
                                         {/* 掌握度 */}
@@ -237,6 +247,29 @@ export default function LibraryPage() {
                                 </div>
                             )
                         })}
+                    </div>
+                )}
+
+                {/* 分页 */}
+                {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-6">
+                        <button
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page <= 1}
+                            className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-50"
+                        >
+                            上一页
+                        </button>
+                        <span className="text-sm text-gray-500">
+                            第 {page} / {totalPages} 页
+                        </span>
+                        <button
+                            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                            disabled={page >= totalPages}
+                            className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-50"
+                        >
+                            下一页
+                        </button>
                     </div>
                 )}
             </div>

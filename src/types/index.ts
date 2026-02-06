@@ -65,40 +65,40 @@ export interface Card {
   id: string
   source: CardSource
   upstreamSource?: UpstreamSource
-  
+
   // 三级分类
   categoryL1Id: string
   categoryL2Id: string
   categoryL3Id: string
-  
+
   // 内容
   title: string
   question: string
   answer?: string
-  
+
   // 标签系统
   questionType: QuestionType
   difficulty: DifficultyTag
   frequency: FrequencyTag
   customTags: string[]
-  
+
   // 代码题专属
   codeTemplate?: string
   testCases?: TestCase[]
   entryFunctionName?: string
   supportedLanguages?: ('javascript' | 'typescript')[]
-  
+
   // 用户掌握度 & 间隔复习
   mastery: MasteryStatus
   reviewCount: number
   intervalDays: number
   dueAt: Date
   lastReviewedAt?: Date
-  
+
   // 代码题记录
   lastSubmissionCode?: string
   passRate?: number
-  
+
   // 元数据
   originUpstreamId?: string
   createdAt: Date
@@ -182,3 +182,25 @@ export interface DomainStats {
   new: number
   masteryRate: number
 }
+
+// ========== Labour 面试 ==========
+
+export interface LabourCompany {
+  id: string
+  name: string
+  logoUrl?: string
+  createdAt: Date
+  questionCount?: number
+}
+
+export interface LabourQuestion {
+  id: string
+  companyId: string
+  question: string
+  answer?: string
+  tags: string[]
+  submittedBy?: string
+  createdAt: Date
+  updatedAt: Date
+}
+

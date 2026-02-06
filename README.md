@@ -1,5 +1,24 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Supabase Setup
+
+1. Create a Supabase project and open the SQL editor.
+2. Run the schema in `supabase/schema.sql`.
+3. Add the following env vars:
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
+
+4. (Admin only) Generate upstream data and import:
+
+```bash
+npm run sync
+# then open /settings and click “导入”
+```
+
 ## Getting Started
 
 First, run the development server:

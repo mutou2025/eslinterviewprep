@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, PlayCircle, CheckSquare, Square } from 'lucide-react'
 import { MasteryBadge } from '@/components/MasteryBadge'
-import { db, getCardsByCategory } from '@/lib/db'
+import { createList, getCardsByCategory, getCategories } from '@/lib/data-service'
 import type { Card, Category } from '@/types'
 
 export default function CategoryPage() {
@@ -20,8 +20,9 @@ export default function CategoryPage() {
 
     useEffect(() => {
         async function loadData() {
-            const cat = await db.categories.get(categoryId)
-            setCategory(cat || null)
+            const cats = await getCategories()
+            const cat = cats.find(c => c.id === categoryId) || null
+            setCategory(cat)
 
             const categoryCards = await getCardsByCategory(categoryId)
             setCards(categoryCards)
@@ -31,43 +32,43 @@ export default function CategoryPage() {
         loadData()
     }, [categoryId])
 
-    // 切换单个卡片选择
-    const toggleCard = (e: React.MouseEvent, cardId: string) => {
+    // 所有回调函数在 early return 之前定义
+    const toggleCard = useCallback((e: React.MouseEvent, cardId: string) => {
         e.stopPropagation()
-        const newSelected = new Set(selectedCards)
-        if (newSelected.has(cardId)) {
-            newSelected.delete(cardId)
-        } else {
-            newSelected.add(cardId)
-        }
-        setSelectedCards(newSelected)
-    }
+        setSelectedCards(prev => {
+            const newSelected = new Set(prev)
+            if (newSelected.has(cardId)) {
+                newSelected.delete(cardId)
+            } else {
+                newSelected.add(cardId)
+            }
+            return newSelected
+        })
+    }, [])
 
-    // 全选/取消全选
-    const toggleSelectAll = () => {
-        if (selectedCards.size === cards.length) {
-            setSelectedCards(new Set())
-        } else {
-            setSelectedCards(new Set(cards.map(c => c.id)))
-        }
-    }
+    const toggleSelectAll = useCallback(() => {
+        setSelectedCards(prev => {
+            if (prev.size === cards.length) {
+                return new Set()
+            } else {
+                return new Set(cards.map(c => c.id))
+            }
+        })
+    }, [cards])
 
-    // 开始学习选中的题目
-    const startStudySelected = async () => {
+    const startStudySelected = useCallback(async () => {
         if (selectedCards.size === 0) return
 
-        const listId = `temp-${Date.now()}`
-        await db.lists.put({
-            id: listId,
-            name: `临时学习 (${selectedCards.size}题)`,
-            cardIds: Array.from(selectedCards),
-            createdAt: new Date(),
-            updatedAt: new Date()
-        })
+        const list = await createList(`临时学习 (${selectedCards.size}题)`, Array.from(selectedCards))
+        if (!list) return
 
-        router.push(`/review/qa?scope=list:${listId}`)
-    }
+        router.push(`/review/qa?scope=list:${list.id}`)
+    }, [selectedCards, router])
 
+    // 计算派生状态
+    const isAllSelected = cards.length > 0 && selectedCards.size === cards.length
+
+    // 加载中状态
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -75,8 +76,6 @@ export default function CategoryPage() {
             </div>
         )
     }
-
-    const isAllSelected = cards.length > 0 && selectedCards.size === cards.length
 
     return (
         <div className="p-8">
@@ -171,11 +170,9 @@ export default function CategoryPage() {
                                             className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
                                         >
                                             <p className="font-medium text-gray-900 mb-1">
-                                                {card.question}
+                                                {card.title}
                                             </p>
-                                            <p className="text-gray-500 text-sm line-clamp-2">
-                                                {(card.answer || '').replace(/[#*`\n]/g, ' ').slice(0, 120)}...
-                                            </p>
+                                            <p className="text-gray-500 text-sm">点击查看详情</p>
                                         </Link>
 
                                         {/* 掌握度 */}

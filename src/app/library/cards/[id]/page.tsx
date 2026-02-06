@@ -1,14 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, PlayCircle, Edit, Star } from 'lucide-react'
+import { ArrowLeft, PlayCircle, Star } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import { MasteryBadge } from '@/components/MasteryBadge'
-import { db, getCardWithOverride } from '@/lib/db'
+import { getCardAnswer, getCardSummary, getDefaultList, updateList } from '@/lib/data-service'
 import type { Card } from '@/types'
 import 'highlight.js/styles/github-dark.css'
 
@@ -20,35 +20,52 @@ export default function CardDetailPage() {
     const [card, setCard] = useState<Card | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [isFavorite, setIsFavorite] = useState(false)
+    const [isAnswerLoading, setIsAnswerLoading] = useState(false)
+    const [showAnswer, setShowAnswer] = useState(false)
 
     useEffect(() => {
         async function loadCard() {
-            const c = await getCardWithOverride(cardId)
+            const c = await getCardSummary(cardId)
             setCard(c || null)
 
             // 检查是否在收藏列表
-            const favList = await db.lists.get('favorites')
-            if (favList) {
-                setIsFavorite(favList.cardIds.includes(cardId))
-            }
+            const favList = await getDefaultList()
+            if (favList) setIsFavorite(favList.cardIds.includes(cardId))
 
             setIsLoading(false)
         }
         loadCard()
     }, [cardId])
 
-    const toggleFavorite = async () => {
-        const favList = await db.lists.get('favorites')
+    // 所有回调函数在 early return 之前定义
+    const loadAnswer = useCallback(async () => {
+        if (!card || card.answer) {
+            setShowAnswer(true)
+            return
+        }
+        setIsAnswerLoading(true)
+        try {
+            const answer = await getCardAnswer(card.id)
+            setCard(prev => prev ? { ...prev, answer: answer || undefined } : null)
+            setShowAnswer(true)
+        } finally {
+            setIsAnswerLoading(false)
+        }
+    }, [card])
+
+    const toggleFavorite = useCallback(async () => {
+        const favList = await getDefaultList()
         if (!favList) return
 
         const newCardIds = isFavorite
             ? favList.cardIds.filter(id => id !== cardId)
             : [...favList.cardIds, cardId]
 
-        await db.lists.update('favorites', { cardIds: newCardIds, updatedAt: new Date() })
+        await updateList(favList.id, { cardIds: newCardIds })
         setIsFavorite(!isFavorite)
-    }
+    }, [cardId, isFavorite])
 
+    // 加载中状态
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -57,6 +74,7 @@ export default function CardDetailPage() {
         )
     }
 
+    // 卡片不存在
     if (!card) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -130,12 +148,20 @@ export default function CardDetailPage() {
                             <span className="w-1 h-5 bg-indigo-600 rounded-full"></span>
                             参考答案
                         </h2>
+                        {!showAnswer && (
+                            <button
+                                onClick={loadAnswer}
+                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            >
+                                {isAnswerLoading ? '加载中...' : '显示答案'}
+                            </button>
+                        )}
                         <div className="prose prose-indigo max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeHighlight]}
                             >
-                                {card.answer}
+                                {showAnswer ? (card.answer || '暂无答案') : ''}
                             </ReactMarkdown>
                         </div>
                     </div>

@@ -6,7 +6,7 @@ import { Flashcard } from '@/components/Flashcard'
 import { FlashcardControls } from '@/components/FlashcardControls'
 import { MasteryProgress } from '@/components/MasteryBadge'
 import { useReviewStore } from '@/store/review-store'
-import { db, getAllCardsWithOverrides, getCardsByCategory, getCardsByList, getMasteryStats } from '@/lib/db'
+import { getReviewCards, getMasteryStats, getCardAnswer } from '@/lib/data-service'
 import { restoreSession, createSession, getDefaultFilters } from '@/lib/session-service'
 import type { Card, MasteryStatus } from '@/types'
 
@@ -20,6 +20,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
 
     const [mode, setMode] = useState<string>('qa')
     const [isLoading, setIsLoading] = useState(true)
+    const [answerLoadingIds, setAnswerLoadingIds] = useState<Set<string>>(new Set())
     const [showContinuePrompt, setShowContinuePrompt] = useState(false)
     const [masteryStats, setMasteryStats] = useState<Record<MasteryStatus, number>>({
         new: 0, fuzzy: 0, 'can-explain': 0, solid: 0
@@ -35,7 +36,8 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         markMastery,
         goToNext,
         goToPrevious,
-        reset
+        reset,
+        setCardAnswer
     } = useReviewStore()
 
     // 加载数据
@@ -49,15 +51,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
 
             // 获取卡片
             let cards: Card[] = []
-            if (scope === 'all') {
-                cards = await getAllCardsWithOverrides()
-            } else if (scope.startsWith('category:')) {
-                const categoryId = scope.replace('category:', '')
-                cards = await getCardsByCategory(categoryId)
-            } else if (scope.startsWith('list:')) {
-                const listId = scope.replace('list:', '')
-                cards = await getCardsByList(listId)
-            }
+            cards = await getReviewCards(scope, 200)
 
             // 设置卡片到 store
             setCards(cards)
@@ -143,6 +137,29 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [isFlipped, flipCard, markMastery, goToNext, goToPrevious])
 
+    // 定义 handleLoadAnswer 在 early return 之前，确保 hooks 顺序一致
+    const handleLoadAnswer = useCallback(async () => {
+        if (!currentCard || currentCard.answer) return
+        if (answerLoadingIds.has(currentCard.id)) return
+
+        setAnswerLoadingIds(prev => {
+            const next = new Set(prev)
+            next.add(currentCard.id)
+            return next
+        })
+
+        try {
+            const answer = await getCardAnswer(currentCard.id)
+            setCardAnswer(currentCard.id, answer)
+        } finally {
+            setAnswerLoadingIds(prev => {
+                const updated = new Set(prev)
+                updated.delete(currentCard.id)
+                return updated
+            })
+        }
+    }, [currentCard, answerLoadingIds, setCardAnswer])
+
     // 加载中
     if (isLoading) {
         return (
@@ -178,6 +195,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         )
     }
 
+
     return (
         <div className="min-h-screen py-8 px-4">
             <div className="max-w-4xl mx-auto">
@@ -192,6 +210,8 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                     isFlipped={isFlipped}
                     onFlip={flipCard}
                     onMarkMastery={markMastery}
+                    onLoadAnswer={handleLoadAnswer}
+                    isAnswerLoading={answerLoadingIds.has(currentCard.id)}
                 />
 
                 {/* 控制栏 */}

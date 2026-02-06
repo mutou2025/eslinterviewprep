@@ -13,6 +13,8 @@ interface FlashcardProps {
     onFlip: () => void
     onMarkMastery: (mastery: MasteryStatus) => void
     showTags?: boolean
+    onLoadAnswer?: () => void
+    isAnswerLoading?: boolean
 }
 
 const masteryConfig: Record<MasteryStatus, { label: string; color: string; bg: string }> = {
@@ -35,7 +37,15 @@ const frequencyConfig: Record<string, { label: string; color: string }> = {
     'low': { label: '低频', color: 'bg-gray-50 text-gray-600' }
 }
 
-export function Flashcard({ card, isFlipped, onFlip, onMarkMastery, showTags = true }: FlashcardProps) {
+export function Flashcard({
+    card,
+    isFlipped,
+    onFlip,
+    onMarkMastery,
+    showTags = true,
+    onLoadAnswer,
+    isAnswerLoading = false
+}: FlashcardProps) {
     const cardContainerRef = useRef<HTMLDivElement>(null)
     const answerContentRef = useRef<HTMLDivElement>(null)
 
@@ -50,6 +60,12 @@ export function Flashcard({ card, isFlipped, onFlip, onMarkMastery, showTags = t
             answerContentRef.current.scrollTop = 0
         }
     }, [isFlipped])
+
+    useEffect(() => {
+        if (isFlipped && !card.answer && onLoadAnswer) {
+            onLoadAnswer()
+        }
+    }, [isFlipped, card.answer, card.id, onLoadAnswer])
 
     return (
         <div ref={cardContainerRef} className="w-full max-w-3xl mx-auto">
@@ -138,9 +154,13 @@ export function Flashcard({ card, isFlipped, onFlip, onMarkMastery, showTags = t
                                 onClick={(e) => e.stopPropagation()}
                             >
                                 <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-img:shadow-md">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-                                        {card.answer || '暂无答案'}
-                                    </ReactMarkdown>
+                                    {isAnswerLoading ? (
+                                        <p className="text-sm text-gray-400">答案加载中...</p>
+                                    ) : (
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                                            {card.answer || '暂无答案'}
+                                        </ReactMarkdown>
+                                    )}
                                 </div>
                             </div>
 
@@ -171,4 +191,3 @@ export function Flashcard({ card, isFlipped, onFlip, onMarkMastery, showTags = t
         </div>
     )
 }
-

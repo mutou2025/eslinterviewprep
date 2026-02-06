@@ -1,11 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, PlayCircle, CheckSquare, Square, Trash2 } from 'lucide-react'
 import { MasteryBadge } from '@/components/MasteryBadge'
-import { db, getCardWithOverride } from '@/lib/db'
+import { createList, getCardsByList, getListById, updateList } from '@/lib/data-service'
 import type { Card, CardList } from '@/types'
 
 export default function ListDetailPage() {
@@ -20,13 +20,12 @@ export default function ListDetailPage() {
 
     useEffect(() => {
         async function loadData() {
-            const l = await db.lists.get(listId)
+            const l = await getListById(listId)
             setList(l || null)
 
             if (l) {
-                const cardPromises = l.cardIds.map(id => getCardWithOverride(id))
-                const loadedCards = await Promise.all(cardPromises)
-                setCards(loadedCards.filter(Boolean) as Card[])
+                const loadedCards = await getCardsByList(listId)
+                setCards(loadedCards)
             }
 
             setIsLoading(false)
@@ -34,56 +33,55 @@ export default function ListDetailPage() {
         loadData()
     }, [listId])
 
-    // 切换单个卡片选择
-    const toggleCard = (e: React.MouseEvent, cardId: string) => {
+    // 所有回调函数在 early return 之前定义
+    const toggleCard = useCallback((e: React.MouseEvent, cardId: string) => {
         e.stopPropagation()
-        const newSelected = new Set(selectedCards)
-        if (newSelected.has(cardId)) {
-            newSelected.delete(cardId)
-        } else {
-            newSelected.add(cardId)
-        }
-        setSelectedCards(newSelected)
-    }
+        setSelectedCards(prev => {
+            const newSelected = new Set(prev)
+            if (newSelected.has(cardId)) {
+                newSelected.delete(cardId)
+            } else {
+                newSelected.add(cardId)
+            }
+            return newSelected
+        })
+    }, [])
 
-    // 全选/取消全选
-    const toggleSelectAll = () => {
-        if (selectedCards.size === cards.length) {
-            setSelectedCards(new Set())
-        } else {
-            setSelectedCards(new Set(cards.map(c => c.id)))
-        }
-    }
+    const toggleSelectAll = useCallback(() => {
+        setSelectedCards(prev => {
+            if (prev.size === cards.length) {
+                return new Set()
+            } else {
+                return new Set(cards.map(c => c.id))
+            }
+        })
+    }, [cards])
 
-    // 开始学习选中的题目
-    const startStudySelected = async () => {
+    const startStudySelected = useCallback(async () => {
         if (selectedCards.size === 0) return
 
-        const tempListId = `temp-${Date.now()}`
-        await db.lists.put({
-            id: tempListId,
-            name: `临时学习 (${selectedCards.size}题)`,
-            cardIds: Array.from(selectedCards),
-            createdAt: new Date(),
-            updatedAt: new Date()
-        })
+        const tempList = await createList(`临时学习 (${selectedCards.size}题)`, Array.from(selectedCards))
+        if (!tempList) return
 
-        router.push(`/review/qa?scope=list:${tempListId}`)
-    }
+        router.push(`/review/qa?scope=list:${tempList.id}`)
+    }, [selectedCards, router])
 
-    // 从列表移除选中的卡片
-    const removeSelected = async () => {
+    const removeSelected = useCallback(async () => {
         if (selectedCards.size === 0 || !list) return
         if (!confirm(`确定要从列表移除 ${selectedCards.size} 道题吗？`)) return
 
         const newCardIds = list.cardIds.filter(id => !selectedCards.has(id))
-        await db.lists.update(listId, { cardIds: newCardIds, updatedAt: new Date() })
+        await updateList(listId, { cardIds: newCardIds })
 
-        setList({ ...list, cardIds: newCardIds })
-        setCards(cards.filter(c => !selectedCards.has(c.id)))
+        setList(prev => prev ? { ...prev, cardIds: newCardIds } : null)
+        setCards(prev => prev.filter(c => !selectedCards.has(c.id)))
         setSelectedCards(new Set())
-    }
+    }, [selectedCards, list, listId])
 
+    // 计算派生状态
+    const isAllSelected = cards.length > 0 && selectedCards.size === cards.length
+
+    // 加载中状态
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -92,6 +90,7 @@ export default function ListDetailPage() {
         )
     }
 
+    // 列表不存在
     if (!list) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -104,8 +103,6 @@ export default function ListDetailPage() {
             </div>
         )
     }
-
-    const isAllSelected = cards.length > 0 && selectedCards.size === cards.length
 
     return (
         <div className="p-8">
@@ -217,9 +214,7 @@ export default function ListDetailPage() {
                                                     {card.title}
                                                 </span>
                                             </div>
-                                            <p className="text-gray-600 text-sm line-clamp-2">
-                                                {card.question.replace(/[#*`]/g, '').slice(0, 100)}...
-                                            </p>
+                                            <p className="text-gray-500 text-sm">点击查看详情</p>
                                         </Link>
 
                                         {/* 掌握度 */}

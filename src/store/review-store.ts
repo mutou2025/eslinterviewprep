@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { Card, MasteryStatus, ReviewFilters, ReviewSession } from '@/types'
 import { scheduleNext } from '@/lib/scheduler'
-import { updateCardMastery, getCardWithOverride } from '@/lib/db'
+import { updateCardMastery } from '@/lib/data-service'
 import { saveSession } from '@/lib/session-service'
 
 interface ReviewState {
@@ -30,6 +30,7 @@ interface ReviewState {
     goToIndex: (index: number) => void
 
     updateFilters: (filters: Partial<ReviewFilters>) => void
+    setCardAnswer: (cardId: string, answer: string | null) => void
 
     reset: () => void
 }
@@ -74,7 +75,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
         const scheduleUpdate = scheduleNext(currentCard, mastery)
 
         // 更新数据库
-        await updateCardMastery(currentCard.id, mastery, scheduleUpdate)
+        await updateCardMastery(currentCard, mastery, scheduleUpdate, timeSpentMs)
 
         // 更新本地状态
         const updatedCard = { ...currentCard, ...scheduleUpdate }
@@ -184,6 +185,20 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
 
         set({ session: newSession })
         saveSession(newSession)
+    },
+
+    setCardAnswer: (cardId, answer) => {
+        const { cardMap, currentCard } = get()
+        const existing = cardMap.get(cardId)
+        if (!existing) return
+
+        const updated = { ...existing, answer: answer || undefined }
+        cardMap.set(cardId, updated)
+
+        set({
+            cardMap: new Map(cardMap),
+            currentCard: currentCard?.id === cardId ? updated : currentCard
+        })
     },
 
     reset: () => {

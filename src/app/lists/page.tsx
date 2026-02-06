@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Plus, PlayCircle, Trash2 } from 'lucide-react'
-import { db } from '@/lib/db'
+import { createList as createListRemote, deleteList as deleteListRemote, getLists } from '@/lib/data-service'
 import type { CardList } from '@/types'
 
 export default function ListsPage() {
@@ -16,33 +16,27 @@ export default function ListsPage() {
     }, [])
 
     async function loadLists() {
-        const allLists = await db.lists.toArray()
+        const allLists = await getLists()
         setLists(allLists)
     }
 
-    async function createList() {
+    const handleCreateList = useCallback(async () => {
         if (!newListName.trim()) return
 
-        const newList: CardList = {
-            id: `list-${Date.now()}`,
-            name: newListName.trim(),
-            cardIds: [],
-            createdAt: new Date(),
-            updatedAt: new Date()
-        }
+        const newList = await createListRemote(newListName.trim(), [])
+        if (!newList) return
 
-        await db.lists.add(newList)
-        setLists([...lists, newList])
+        setLists(prev => [...prev, newList])
         setNewListName('')
         setIsCreating(false)
-    }
+    }, [newListName])
 
-    async function deleteList(listId: string) {
+    const handleDeleteList = useCallback(async (listId: string) => {
         if (!confirm('确定要删除这个列表吗？')) return
 
-        await db.lists.delete(listId)
-        setLists(lists.filter(l => l.id !== listId))
-    }
+        await deleteListRemote(listId)
+        setLists(prev => prev.filter(l => l.id !== listId))
+    }, [])
 
     return (
         <div className="p-8">
@@ -71,12 +65,12 @@ export default function ListsPage() {
                                 placeholder="列表名称"
                                 value={newListName}
                                 onChange={(e) => setNewListName(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && createList()}
+                                onKeyDown={(e) => e.key === 'Enter' && handleCreateList()}
                                 className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 autoFocus
                             />
                             <button
-                                onClick={createList}
+                                onClick={handleCreateList}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                             >
                                 创建
@@ -126,7 +120,7 @@ export default function ListsPage() {
                                         </Link>
                                         {!list.isDefault && (
                                             <button
-                                                onClick={() => deleteList(list.id)}
+                                                onClick={() => handleDeleteList(list.id)}
                                                 className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                                                 title="删除列表"
                                             >

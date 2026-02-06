@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { PlayCircle, TrendingUp, Clock, Target, Flame } from 'lucide-react'
 import { MasteryProgress } from '@/components/MasteryBadge'
-import { db, getMasteryStats, getDomainStats, initializeDefaultData } from '@/lib/db'
+import { getCategories, getMasteryStats, getDomainStats, initializeDefaultData, getDueCount } from '@/lib/data-service'
 import type { MasteryStatus, Category } from '@/types'
 
 export default function DashboardPage() {
@@ -32,14 +32,12 @@ export default function DashboardPage() {
             setDomainStats(dStats)
 
             // 获取分类
-            const cats = await db.categories.where('level').equals(3).toArray()
+            const cats = await getCategories(3)
             setCategories(cats)
 
             // 获取到期数
-            const now = new Date()
-            const cards = await db.cards.toArray()
-            const due = cards.filter(c => new Date(c.dueAt) <= now && c.mastery !== 'solid')
-            setDueCount(due.length)
+            const due = await getDueCount(new Date())
+            setDueCount(due)
         }
         loadData()
     }, [])

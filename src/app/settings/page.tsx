@@ -2,58 +2,43 @@
 
 import { useState } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { db } from '@/lib/db'
+import { clearUserData, initializeDefaultData } from '@/lib/data-service'
+import { getSupabaseClient } from '@/lib/supabase-client'
 
 export default function SettingsPage() {
     const [isImporting, setIsImporting] = useState(false)
     const [importStatus, setImportStatus] = useState('')
+    const [importStats, setImportStats] = useState<{
+        cards: { total: number; unique: number; duplicates: number }
+        categories: { total: number; unique: number; duplicates: number }
+    } | null>(null)
 
     async function importFromUpstream() {
         setIsImporting(true)
         setImportStatus('正在导入题库...')
+        setImportStats(null)
 
         try {
+            const supabase = getSupabaseClient()
+            const { data } = await supabase.auth.getSession()
+            const token = data.session?.access_token
+
             // 从 data/upstream.json 导入
-            const response = await fetch('/api/import-upstream')
+            const response = await fetch('/api/import-upstream', {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined
+            })
             const result = await response.json()
 
             if (result.success) {
                 setImportStatus(`✅ 成功导入 ${result.count} 道题`)
+                if (result.stats?.cards && result.stats?.categories) {
+                    setImportStats(result.stats)
+                }
             } else {
                 setImportStatus(`❌ 导入失败: ${result.error}`)
             }
         } catch (err) {
-            // 备用方案：直接获取预生成的数据
-            try {
-                const response = await fetch('/data/upstream.json')
-                if (!response.ok) {
-                    setImportStatus('❌ 请先运行 npm run sync 生成题库数据')
-                    return
-                }
-
-                const data = await response.json()
-
-                // 导入分类
-                await db.categories.bulkPut(data.categories)
-
-                // 导入卡片
-                for (const card of data.cards) {
-                    // 检查是否已存在
-                    const existing = await db.cards.get(card.id)
-                    if (!existing) {
-                        await db.cards.add({
-                            ...card,
-                            dueAt: new Date(card.dueAt),
-                            createdAt: new Date(card.createdAt),
-                            updatedAt: new Date(card.updatedAt)
-                        })
-                    }
-                }
-
-                setImportStatus(`✅ 成功导入 ${data.cards.length} 道题`)
-            } catch (innerErr) {
-                setImportStatus('❌ 导入失败，请检查题库数据')
-            }
+            setImportStatus('❌ 导入失败，请检查服务端日志')
         } finally {
             setIsImporting(false)
         }
@@ -62,10 +47,8 @@ export default function SettingsPage() {
     async function clearAllData() {
         if (!confirm('确定要清除所有数据吗？这将删除所有题目和学习进度！')) return
 
-        await db.cards.clear()
-        await db.overrides.clear()
-        await db.sessions.clear()
-        await db.logs.clear()
+        await clearUserData()
+        await initializeDefaultData()
 
         setImportStatus('✅ 已清除所有数据')
     }
@@ -114,6 +97,14 @@ export default function SettingsPage() {
                             {importStatus}
                         </div>
                     )}
+
+                    {importStats && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-700">
+                            <div className="font-medium text-gray-900 mb-2">导入前检测报告</div>
+                            <div>Cards: 总数 {importStats.cards.total} / 去重后 {importStats.cards.unique} / 重复 {importStats.cards.duplicates}</div>
+                            <div>Categories: 总数 {importStats.categories.total} / 去重后 {importStats.categories.unique} / 重复 {importStats.categories.duplicates}</div>
+                        </div>
+                    )}
                 </div>
 
                 {/* 使用说明 */}
@@ -124,7 +115,7 @@ export default function SettingsPage() {
                         <h3 className="text-base font-medium text-gray-900">首次使用</h3>
                         <ol className="list-decimal list-inside space-y-2 mb-4">
                             <li>运行 <code className="bg-gray-100 px-1 rounded">npm run sync</code> 同步题库</li>
-                            <li>点击上方「导入」按钮导入题目到浏览器</li>
+                            <li>点击上方「导入」按钮导入题目到云数据库</li>
                             <li>进入「题库」或点击「开始复习」</li>
                         </ol>
 
