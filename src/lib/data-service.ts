@@ -60,7 +60,7 @@ function toCard(row: CardRow): Card {
     return {
         id: row.id,
         source: row.source as Card['source'],
-        upstreamSource: (row.upstream_source as Card['upstreamSource']) || undefined,
+        upstreamSource: row.upstream_source ? (row.upstream_source as unknown as Card['upstreamSource']) : undefined,
         categoryL1Id: row.category_l1_id,
         categoryL2Id: row.category_l2_id,
         categoryL3Id: row.category_l3_id,
