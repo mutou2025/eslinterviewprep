@@ -60,7 +60,7 @@ function toCard(row: CardRow): Card {
     return {
         id: row.id,
         source: row.source as Card['source'],
-        upstreamSource: row.upstream_source || undefined,
+        upstreamSource: (row.upstream_source as Card['upstreamSource']) || undefined,
         categoryL1Id: row.category_l1_id,
         categoryL2Id: row.category_l2_id,
         categoryL3Id: row.category_l3_id,
@@ -190,7 +190,7 @@ async function getAllCardsWithOverridesInternal(options: { includeAnswer: boolea
         return []
     }
 
-    const cards = (cardRows as CardRow[]).map(toCard)
+    const cards = (cardRows as unknown as CardRow[]).map(toCard)
 
     if (!userId) return cards
 
@@ -533,9 +533,9 @@ export async function getMasteryStats(): Promise<Record<MasteryStatus, number>> 
         .eq('user_id', userId)
 
     const stats: Record<MasteryStatus, number> = { new: 0, fuzzy: 0, 'can-explain': 0, solid: 0 }
-    ;(overrideRows as Array<{ mastery: MasteryStatus }> | null || []).forEach(row => {
-        stats[row.mastery]++
-    })
+        ; (overrideRows as Array<{ mastery: MasteryStatus }> | null || []).forEach(row => {
+            stats[row.mastery]++
+        })
 
     const nonNew = stats.fuzzy + stats['can-explain'] + stats.solid
     stats.new = Math.max(0, (totalCards || 0) - nonNew)
@@ -630,7 +630,7 @@ export async function syncCardSummaryCache(): Promise<void> {
         const summaries: CardSummary[] = (rows as CardRow[]).map(row => ({
             id: row.id,
             source: row.source as Card['source'],
-            upstreamSource: row.upstream_source || undefined,
+            upstreamSource: (row.upstream_source as Card['upstreamSource']) || undefined,
             categoryL1Id: row.category_l1_id,
             categoryL2Id: row.category_l2_id,
             categoryL3Id: row.category_l3_id,
