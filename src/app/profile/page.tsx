@@ -130,7 +130,7 @@ export default function ProfilePage() {
                     <p className="text-gray-500 mt-1">账号信息、订阅状态与偏好设置</p>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">账号信息</h2>
                     {loading ? (
                         <p className="text-gray-500">加载中...</p>
@@ -162,7 +162,7 @@ export default function ProfilePage() {
                     )}
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">订阅状态</h2>
                     {loading ? (
                         <p className="text-gray-500">加载中...</p>
@@ -186,7 +186,7 @@ export default function ProfilePage() {
                     )}
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">偏好设置</h2>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
@@ -212,7 +212,7 @@ export default function ProfilePage() {
                             <button
                                 onClick={() => setPrefDailyReminder(!prefDailyReminder)}
                                 className={`px-4 py-2 rounded-lg text-sm transition-colors ${prefDailyReminder
-                                    ? 'bg-indigo-600 text-white'
+                                    ? 'bg-blue-600 text-white'
                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >

@@ -66,11 +66,11 @@ export default function DevOpsInterviewQuestionsPage() {
                             <Link
                                 key={topic.id}
                                 href={`/library/categories/${topic.id}`}
-                                className="bg-white rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group"
+                                className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de] hover:shadow-md transition-all group"
                             >
                                 <div className="flex items-start gap-4">
                                     <div className="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center group-hover:bg-teal-200 transition-colors">
-                                        <Icon className="w-6 h-6 text-teal-600" />
+                                        <Icon className="w-6 h-6 text-blue-700" />
                                     </div>
                                     <div className="flex-1">
                                         <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -79,7 +79,7 @@ export default function DevOpsInterviewQuestionsPage() {
                                         </h2>
                                         <p className="text-sm text-gray-500 mt-1">{topic.nameZh}</p>
                                         <p className="text-sm text-gray-600 mt-2">{topic.description}</p>
-                                        <p className="text-xs text-teal-600 mt-2">{topic.count}+ questions</p>
+                                        <p className="text-xs text-blue-700 mt-2">{topic.count}+ questions</p>
                                     </div>
                                 </div>
                             </Link>
@@ -88,14 +88,14 @@ export default function DevOpsInterviewQuestionsPage() {
                 </div>
 
                 {/* CTA */}
-                <div className="bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl p-6 text-white">
+                <div className="bg-gradient-to-r from-slate-900 to-blue-700 rounded-2xl p-6 text-white">
                     <h2 className="text-xl font-bold mb-2">Start Practicing Now</h2>
                     <p className="text-teal-100 mb-4">
                         Master DevOps concepts with flashcards and spaced repetition
                     </p>
                     <Link
                         href="/review/qa"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-teal-600 rounded-xl font-medium hover:bg-teal-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-xl font-medium hover:bg-slate-50 transition-colors"
                     >
                         Start Review
                         <ArrowRight className="w-4 h-4" />

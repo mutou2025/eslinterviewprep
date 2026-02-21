@@ -165,7 +165,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4" />
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
                     <p className="text-gray-500">加载中...</p>
                 </div>
             </div>
@@ -186,7 +186,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                     </p>
                     <a
                         href="/library"
-                        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         去题库看看
                     </a>

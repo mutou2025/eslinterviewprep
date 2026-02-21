@@ -59,7 +59,7 @@ export default function SettingsPage() {
                 <h1 className="text-2xl font-bold text-gray-900 mb-8">设置</h1>
 
                 {/* 数据管理 */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de] mb-6">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">数据管理</h2>
 
                     <div className="space-y-4">
@@ -71,7 +71,7 @@ export default function SettingsPage() {
                             <button
                                 onClick={importFromUpstream}
                                 disabled={isImporting}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                             >
                                 <RefreshCw size={18} className={isImporting ? 'animate-spin' : ''} />
                                 {isImporting ? '导入中...' : '导入'}
@@ -108,7 +108,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* 使用说明 */}
-                <div className="bg-white rounded-2xl p-6 shadow-sm">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
                     <h2 className="text-lg font-semibold text-gray-900 mb-4">使用说明</h2>
 
                     <div className="prose prose-sm text-gray-600">

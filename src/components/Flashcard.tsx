@@ -27,7 +27,7 @@ const masteryConfig: Record<MasteryStatus, { label: string; color: string; bg: s
 const difficultyConfig: Record<string, { label: string; color: string }> = {
     'easy': { label: '简单', color: 'bg-green-100 text-green-700' },
     'must-know': { label: '必考', color: 'bg-red-100 text-red-700' },
-    'hard': { label: '困难', color: 'bg-purple-100 text-purple-700' },
+    'hard': { label: '困难', color: 'bg-blue-100 text-blue-700' },
     'hand-write': { label: '手写', color: 'bg-yellow-100 text-yellow-700' }
 }
 
@@ -93,7 +93,7 @@ export function Flashcard({
                             {showTags && (
                                 <div className="flex flex-wrap gap-2 p-4 border-b border-gray-100">
                                     {/* 分类 */}
-                                    <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
+                                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
                                         {card.categoryL3Id}
                                     </span>
                                     {/* 题型 */}
@@ -116,7 +116,7 @@ export function Flashcard({
                                 <h2 className="text-lg font-semibold text-gray-500 mb-4">
                                     「{card.title}」
                                 </h2>
-                                <div className="text-xl text-gray-800 text-center prose prose-lg max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+                                <div className="text-xl text-gray-800 text-center prose prose-lg max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
                                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
                                         {card.question}
                                     </ReactMarkdown>
@@ -153,7 +153,7 @@ export function Flashcard({
                                 className="flex-1 overflow-auto p-6"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-img:shadow-md">
+                                <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-img:shadow-md">
                                     {isAnswerLoading ? (
                                         <p className="text-sm text-gray-400">答案加载中...</p>
                                     ) : (

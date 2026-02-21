@@ -35,7 +35,7 @@ export default function LabourPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )
     }
@@ -45,7 +45,7 @@ export default function LabourPage() {
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-blue-700 rounded-xl flex items-center justify-center">
                         <Building2 className="w-5 h-5 text-white" />
                     </div>
                     <div>
@@ -63,7 +63,7 @@ export default function LabourPage() {
                 <div className="mb-6 flex gap-3">
                     <Link
                         href="/labour/submit"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
                     >
                         <Plus size={18} />
                         提交新面试题
@@ -83,13 +83,13 @@ export default function LabourPage() {
                     <Link
                         key={company.id}
                         href={`/labour/${company.id}`}
-                        className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-indigo-300 hover:shadow-lg transition-all"
+                        className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all"
                     >
                         <div className="flex items-start justify-between">
                             <div className="text-4xl mb-4">
                                 {companyIcons[company.id] || '🏢'}
                             </div>
-                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
                         </div>
                         <h3 className="font-semibold text-gray-900 text-lg mb-1">
                             {company.name}

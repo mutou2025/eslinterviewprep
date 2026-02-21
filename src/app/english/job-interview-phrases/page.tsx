@@ -97,7 +97,7 @@ export default function JobInterviewPhrasesPage() {
                     {phraseSections.map(section => {
                         const Icon = section.icon
                         return (
-                            <div key={section.id} className="bg-white rounded-2xl p-6 shadow-sm">
+                            <div key={section.id} className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
                                         <Icon className="w-5 h-5 text-green-600" />

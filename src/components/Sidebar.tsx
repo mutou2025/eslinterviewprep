@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
@@ -9,7 +10,6 @@ import {
     ListChecks,
     PlayCircle,
     Settings,
-    Briefcase,
     Factory
 } from 'lucide-react'
 import { getSupabaseClient } from '@/lib/supabase-client'
@@ -28,10 +28,7 @@ export function Sidebar() {
     const router = useRouter()
     const [menuOpen, setMenuOpen] = useState(false)
     const [email, setEmail] = useState<string | null>(null)
-
-    if (pathname.startsWith('/login')) {
-        return null
-    }
+    const isLoginPage = pathname.startsWith('/login')
 
     useEffect(() => {
         let mounted = true
@@ -56,17 +53,27 @@ export function Sidebar() {
         router.replace('/login')
     }
 
+    if (isLoginPage) return null
+
     return (
-        <aside className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 flex flex-col">
+        <aside className="fixed left-0 top-0 h-full w-72 bg-white/95 backdrop-blur border-r border-[#d0d7de] flex flex-col">
             {/* Logo */}
-            <div className="p-6 border-b border-gray-100">
-                <Link href="/dashboard" className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center">
-                        <Briefcase className="w-5 h-5 text-white" />
+            <div className="px-4 py-8 border-b border-[#d8dee4]">
+                <Link href="/dashboard" className="flex w-full items-center justify-center gap-3">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
+                        <Image
+                            src="/logo.svg"
+                            alt="ESLInterviewPrep logo"
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-contain"
+                            priority
+                        />
                     </div>
-                    <div>
-                        <h1 className="font-bold text-gray-900">北美面试通</h1>
-                        <p className="text-xs text-gray-500">ESLInterviewPrep</p>
+                    <div className="flex min-w-0 flex-col gap-2.5">
+                        <h1 className="font-bold text-[18px] leading-tight tracking-[0.1em] text-[#1f2328]">北美面试通</h1>
+                        <p className="text-[13px] leading-none tracking-[0.1em] text-[#57606a]">ESLInterviewPrep</p>
+                        <p className="text-[12px] leading-none tracking-normal whitespace-nowrap text-[#6e7781]">专为北美求职打造</p>
                     </div>
                 </Link>
             </div>
@@ -82,15 +89,15 @@ export function Sidebar() {
                             <li key={item.href}>
                                 <Link
                                     href={item.href}
-                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${isActive
-                                        ? 'bg-indigo-50 text-indigo-600'
-                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors border ${isActive
+                                        ? 'bg-[#ddf4ff] text-[#0969da] border-[#54aeff66]'
+                                        : 'text-[#57606a] border-transparent hover:bg-[#f6f8fa] hover:text-[#1f2328]'
                                         }`}
                                 >
                                     <Icon size={20} />
                                     <div>
                                         <span className="font-medium block">{item.labelZh}</span>
-                                        <span className="text-xs text-gray-400">{item.label}</span>
+                                        <span className="text-xs text-[#6e7781]">{item.label}</span>
                                     </div>
                                 </Link>
                             </li>
@@ -100,28 +107,28 @@ export function Sidebar() {
             </nav>
 
             {/* Footer */}
-            <div className="p-4 border-t border-gray-100 space-y-3">
+            <div className="p-4 border-t border-[#d8dee4]">
                 <div className="relative">
                     <button
                         onClick={() => setMenuOpen(!menuOpen)}
-                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-50 transition-colors"
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#f6f8fa] transition-colors"
                     >
-                        <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-[#0969da] text-white flex items-center justify-center font-semibold">
                             {initials}
                         </div>
                         <div className="text-left">
-                            <div className="text-sm font-medium text-gray-900">个人中心</div>
-                            <div className="text-xs text-gray-500 truncate w-36">
+                            <div className="text-sm font-medium text-[#1f2328]">个人中心</div>
+                            <div className="text-xs text-[#57606a] truncate w-36">
                                 {email ?? '未登录'}
                             </div>
                         </div>
                     </button>
 
                     {menuOpen && (
-                        <div className="absolute bottom-14 left-0 w-full bg-white border border-gray-200 rounded-xl shadow-lg py-2 z-10">
+                        <div className="absolute bottom-14 left-0 w-full bg-white border border-[#d0d7de] rounded-xl shadow-lg py-2 z-10">
                             <Link
                                 href="/profile"
-                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                                className="block px-4 py-2 text-sm text-[#24292f] hover:bg-[#f6f8fa]"
                                 onClick={() => setMenuOpen(false)}
                             >
                                 进入个人中心
@@ -134,13 +141,6 @@ export function Sidebar() {
                             </button>
                         </div>
                     )}
-                </div>
-
-                <div className="px-4 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl">
-                    <p className="text-sm text-gray-600">
-                        <span className="font-medium text-indigo-600">Tech + Behavioral</span>
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">For Chinese & ESL Job Seekers</p>
                 </div>
             </div>
         </aside>

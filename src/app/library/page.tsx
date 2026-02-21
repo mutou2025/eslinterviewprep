@@ -91,7 +91,7 @@ export default function LibraryPage() {
     if (isLoading && cards.length === 0) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
             </div>
         )
     }
@@ -117,7 +117,7 @@ export default function LibraryPage() {
                         )}
                         <Link
                             href="/review/qa"
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             <PlayCircle size={18} />
                             开始复习
@@ -137,7 +137,7 @@ export default function LibraryPage() {
                                 setSearchQuery(e.target.value)
                                 setPage(1)
                             }}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                         />
                     </div>
                     <select
@@ -146,7 +146,7 @@ export default function LibraryPage() {
                             setSelectedCategory(e.target.value)
                             setPage(1)
                         }}
-                        className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                        className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                         <option value="">所有分类</option>
                         {categories.map(cat => (
@@ -165,7 +165,7 @@ export default function LibraryPage() {
                                 setPage(1)
                             }}
                             className={`px-3 py-1.5 text-sm rounded-full transition-colors ${cat.id === selectedCategory
-                                ? 'bg-indigo-600 text-white'
+                                ? 'bg-blue-600 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
@@ -179,10 +179,10 @@ export default function LibraryPage() {
                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
                         <button
                             onClick={toggleSelectAll}
-                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors"
+                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
                         >
                             {isAllSelected ? (
-                                <CheckSquare size={18} className="text-indigo-600" />
+                                <CheckSquare size={18} className="text-blue-600" />
                             ) : (
                                 <Square size={18} />
                             )}
@@ -209,7 +209,7 @@ export default function LibraryPage() {
                             return (
                                 <div
                                     key={card.id}
-                                    className={`bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${isSelected ? 'ring-2 ring-indigo-500 bg-indigo-50/50' : ''
+                                    className={`bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
                                         }`}
                                 >
                                     <div className="flex items-start gap-3">
@@ -219,7 +219,7 @@ export default function LibraryPage() {
                                             className="pt-1 hover:opacity-70 transition-opacity"
                                         >
                                             {isSelected ? (
-                                                <CheckSquare size={20} className="text-indigo-600" />
+                                                <CheckSquare size={20} className="text-blue-600" />
                                             ) : (
                                                 <Square size={20} className="text-gray-300 hover:text-gray-400" />
                                             )}
@@ -231,7 +231,7 @@ export default function LibraryPage() {
                                             className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
                                         >
                                             <div className="flex items-center gap-2 mb-2">
-                                                <span className="px-2 py-0.5 text-xs bg-indigo-100 text-indigo-700 rounded-full">
+                                                <span className="px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
                                                     {card.categoryL3Id}
                                                 </span>
                                                 <span className="text-sm font-medium text-gray-700">

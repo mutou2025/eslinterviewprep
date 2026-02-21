@@ -69,7 +69,7 @@ export default function CardDetailPage() {
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
             </div>
         )
     }
@@ -80,7 +80,7 @@ export default function CardDetailPage() {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <p className="text-gray-500 mb-4">题目不存在</p>
-                    <Link href="/library" className="text-indigo-600 hover:underline">
+                    <Link href="/library" className="text-blue-600 hover:underline">
                         返回题库
                     </Link>
                 </div>
@@ -114,7 +114,7 @@ export default function CardDetailPage() {
                         </button>
                         <Link
                             href={`/review/qa?cardId=${cardId}`}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             <PlayCircle size={18} />
                             速记卡模式
@@ -127,7 +127,7 @@ export default function CardDetailPage() {
                     {/* 头部 */}
                     <div className="p-6 border-b border-gray-100">
                         <div className="flex items-center gap-3 mb-4">
-                            <span className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded-full">
+                            <span className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full">
                                 {card.categoryL3Id}
                             </span>
                             <MasteryBadge mastery={card.mastery} size="sm" />
@@ -145,18 +145,18 @@ export default function CardDetailPage() {
                     {/* 答案内容 */}
                     <div className="p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            <span className="w-1 h-5 bg-indigo-600 rounded-full"></span>
+                            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
                             参考答案
                         </h2>
                         {!showAnswer && (
                             <button
                                 onClick={loadAnswer}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
                                 {isAnswerLoading ? '加载中...' : '显示答案'}
                             </button>
                         )}
-                        <div className="prose prose-indigo max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+                        <div className="prose prose-blue max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeHighlight]}

@@ -49,7 +49,7 @@ export default function ListsPage() {
                     </div>
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         <Plus size={18} />
                         新建列表
@@ -66,12 +66,12 @@ export default function ListsPage() {
                                 value={newListName}
                                 onChange={(e) => setNewListName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleCreateList()}
-                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 autoFocus
                             />
                             <button
                                 onClick={handleCreateList}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
                                 创建
                             </button>
@@ -102,7 +102,7 @@ export default function ListsPage() {
                                     <div>
                                         <Link
                                             href={`/lists/${list.id}`}
-                                            className="font-medium text-gray-900 hover:text-indigo-600 transition-colors"
+                                            className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
                                         >
                                             {list.isDefault && '⭐ '}{list.name}
                                         </Link>
@@ -113,7 +113,7 @@ export default function ListsPage() {
                                     <div className="flex items-center gap-2">
                                         <Link
                                             href={`/review/qa?scope=list:${list.id}`}
-                                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                             title="开始复习"
                                         >
                                             <PlayCircle size={20} />

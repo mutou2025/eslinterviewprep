@@ -20,6 +20,9 @@ export const metadata: Metadata = {
     default: "北美面试通 | ESLInterviewPrep - North America Interview Prep",
     template: "%s | 北美面试通"
   },
+  icons: {
+    icon: "/logo.svg",
+  },
   description: "North America Interview Questions for Chinese & ESL Job Seekers. Tech & Behavioral Questions with Flashcards + Spaced Repetition. Frontend, Java, DevOps, STAR Method.",
   keywords: ["interview prep", "north america jobs", "tech interview", "behavioral interview", "ESL", "Chinese", "flashcards", "spaced repetition", "STAR method", "frontend", "java", "devops"],
   authors: [{ name: "ESLInterviewPrep" }],
@@ -38,9 +41,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh-CN">
+    <html lang="zh-CN" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <DataInitializer>
           <AppShell>{children}</AppShell>
