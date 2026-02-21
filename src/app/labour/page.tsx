@@ -36,6 +36,7 @@ export default function BehaviorInterviewPage() {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )
     }
@@ -45,6 +46,7 @@ export default function BehaviorInterviewPage() {
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
+                    <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-blue-700 rounded-xl flex items-center justify-center">
                     <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-blue-700 rounded-xl flex items-center justify-center">
                         <Building2 className="w-5 h-5 text-white" />
                     </div>
@@ -89,6 +91,7 @@ export default function BehaviorInterviewPage() {
                             <div className="text-4xl mb-4">
                                 {companyIcons[company.id] || '🏢'}
                             </div>
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
                             <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
                         </div>
                         <h3 className="font-semibold text-gray-900 text-lg mb-1">

@@ -55,8 +55,10 @@ export default function DashboardPage() {
                 {/* 标题 */}
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-[#1f2328]">
+                    <h1 className="text-2xl font-bold text-[#1f2328]">
                         North America Interview Questions
                     </h1>
+                    <p className="text-[#57606a] mt-1">
                     <p className="text-[#57606a] mt-1">
                         For Chinese & ESL Job Seekers | 你的学习进度概览
                     </p>
@@ -65,6 +67,7 @@ export default function DashboardPage() {
                 {/* KPI 卡片 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                     <KPICard
+                        icon={<Target className="text-blue-500" />}
                         icon={<Target className="text-blue-500" />}
                         label="Total Questions"
                         value={totalCards}
@@ -92,9 +95,11 @@ export default function DashboardPage() {
 
                 {/* 开始复习按钮 */}
                 <div className="bg-gradient-to-r from-slate-900 to-blue-700 rounded-2xl p-6 mb-8 text-white">
+                <div className="bg-gradient-to-r from-slate-900 to-blue-700 rounded-2xl p-6 mb-8 text-white">
                     <div className="flex items-center justify-between">
                         <div>
                             <h2 className="text-xl font-bold mb-2">Ready to Practice?</h2>
+                            <p className="text-blue-100">
                             <p className="text-blue-100">
                                 {dueCount > 0
                                     ? `You have ${dueCount} questions to review today`
@@ -104,6 +109,7 @@ export default function DashboardPage() {
                         </div>
                         <Link
                             href="/review/qa"
+                            className="flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-xl font-medium hover:bg-blue-50 transition-colors"
                             className="flex items-center gap-2 px-6 py-3 bg-white text-blue-600 rounded-xl font-medium hover:bg-blue-50 transition-colors"
                         >
                             <PlayCircle size={20} />
@@ -115,10 +121,14 @@ export default function DashboardPage() {
                 {/* 掌握度分布 */}
                 <div className="bg-white rounded-2xl p-6 mb-8 shadow-sm border border-[#d0d7de]">
                     <h3 className="text-lg font-semibold text-[#1f2328] mb-4">掌握度分布</h3>
+                <div className="bg-white rounded-2xl p-6 mb-8 shadow-sm border border-[#d0d7de]">
+                    <h3 className="text-lg font-semibold text-[#1f2328] mb-4">掌握度分布</h3>
                     <MasteryProgress stats={masteryStats} showLabels={true} />
                 </div>
 
                 {/* 领域覆盖度 */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
+                    <h3 className="text-lg font-semibold text-[#1f2328] mb-4">领域覆盖度</h3>
                 <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
                     <h3 className="text-lg font-semibold text-[#1f2328] mb-4">领域覆盖度</h3>
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -130,6 +140,7 @@ export default function DashboardPage() {
                                 <Link
                                     key={cat.id}
                                     href={`/library/categories/${cat.id}`}
+                                    className="p-4 border border-[#d8dee4] rounded-xl hover:border-[#b6e3ff] hover:bg-[#f6f8fa] transition-colors"
                                     className="p-4 border border-[#d8dee4] rounded-xl hover:border-[#b6e3ff] hover:bg-[#f6f8fa] transition-colors"
                                 >
                                     <div className="font-medium text-[#1f2328]">{getLocalizedCategoryName(cat, contentLanguage)}</div>
@@ -165,13 +176,18 @@ function KPICard({
 }) {
     return (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
             <div className="flex items-center gap-3 mb-3">
+                <div className="w-10 h-10 bg-[#f6f8fa] border border-[#d8dee4] rounded-xl flex items-center justify-center">
                 <div className="w-10 h-10 bg-[#f6f8fa] border border-[#d8dee4] rounded-xl flex items-center justify-center">
                     {icon}
                 </div>
                 <span className="text-sm text-[#57606a]">{label}</span>
+                <span className="text-sm text-[#57606a]">{label}</span>
             </div>
             <div className="flex items-baseline gap-2">
+                <span className="text-3xl font-bold text-[#1f2328]">{value}</span>
+                <span className="text-sm text-[#6e7781]">{subtext}</span>
                 <span className="text-3xl font-bold text-[#1f2328]">{value}</span>
                 <span className="text-sm text-[#6e7781]">{subtext}</span>
             </div>

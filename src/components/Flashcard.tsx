@@ -26,11 +26,19 @@ const masteryConfig: Record<MasteryStatus, { labelKey: 'mastery.new' | 'mastery.
     'solid': { labelKey: 'mastery.solid', color: 'text-green-600', bg: 'bg-green-100 hover:bg-green-200' }
 }
 
+<<<<<<< HEAD
 const difficultyConfig: Record<string, { labelKey: 'difficulty.easy' | 'difficulty.mustKnow' | 'difficulty.hard' | 'difficulty.handWrite'; color: string }> = {
     'easy': { labelKey: 'difficulty.easy', color: 'bg-green-100 text-green-700' },
     'must-know': { labelKey: 'difficulty.mustKnow', color: 'bg-red-100 text-red-700' },
     'hard': { labelKey: 'difficulty.hard', color: 'bg-blue-100 text-blue-700' },
     'hand-write': { labelKey: 'difficulty.handWrite', color: 'bg-yellow-100 text-yellow-700' }
+=======
+const difficultyConfig: Record<string, { label: string; color: string }> = {
+    'easy': { label: '简单', color: 'bg-green-100 text-green-700' },
+    'must-know': { label: '必考', color: 'bg-red-100 text-red-700' },
+    'hard': { label: '困难', color: 'bg-blue-100 text-blue-700' },
+    'hand-write': { label: '手写', color: 'bg-yellow-100 text-yellow-700' }
+>>>>>>> fix(style): change style
 }
 
 const frequencyConfig: Record<string, { labelKey: 'frequency.high' | 'frequency.mid' | 'frequency.low'; color: string }> = {

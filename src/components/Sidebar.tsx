@@ -9,9 +9,14 @@ import {
     Library,
     ListChecks,
     PlayCircle,
+<<<<<<< HEAD
     Factory,
     Building2,
     type LucideIcon
+=======
+    Settings,
+    Factory
+>>>>>>> fix(style): change style
 } from 'lucide-react'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useI18n } from '@/i18n/provider'
@@ -67,6 +72,7 @@ export function Sidebar() {
     if (isLoginPage) return null
 
     return (
+<<<<<<< HEAD
         <header className="relative z-50 bg-white/95 backdrop-blur border-b border-[#d0d7de]">
             <div className="px-4 py-4">
                 <div className="flex items-center gap-4">
@@ -130,6 +136,29 @@ export function Sidebar() {
                                         </li>
                                     )
                                 }
+=======
+        <aside className="fixed left-0 top-0 h-full w-72 bg-white/95 backdrop-blur border-r border-[#d0d7de] flex flex-col">
+            {/* Logo */}
+            <div className="px-4 py-8 border-b border-[#d8dee4]">
+                <Link href="/dashboard" className="flex w-full items-center justify-center gap-3">
+                    <div className="w-14 h-14 rounded-xl overflow-hidden flex items-center justify-center shrink-0">
+                        <Image
+                            src="/logo.svg"
+                            alt="ESLInterviewPrep logo"
+                            width={56}
+                            height={56}
+                            className="w-full h-full object-contain"
+                            priority
+                        />
+                    </div>
+                    <div className="flex min-w-0 flex-col gap-2.5">
+                        <h1 className="font-bold text-[18px] leading-tight tracking-[0.1em] text-[#1f2328]">北美面试通</h1>
+                        <p className="text-[13px] leading-none tracking-[0.1em] text-[#57606a]">ESLInterviewPrep</p>
+                        <p className="text-[12px] leading-none tracking-normal whitespace-nowrap text-[#6e7781]">专为北美求职打造</p>
+                    </div>
+                </Link>
+            </div>
+>>>>>>> fix(style): change style
 
                                 return (
                                     <li key={item.href} className="shrink-0">
@@ -166,6 +195,7 @@ export function Sidebar() {
                         {menuOpen && (
                             <div className="absolute top-12 right-0 w-48 bg-white border border-[#d0d7de] rounded-xl shadow-lg py-2 z-10">
                                 <Link
+<<<<<<< HEAD
                                     href="/profile"
                                     className="block px-4 py-2 text-sm text-[#24292f] hover:bg-[#f6f8fa]"
                                     onClick={() => setMenuOpen(false)}
@@ -181,6 +211,61 @@ export function Sidebar() {
                             </div>
                         )}
                     </div>
+=======
+                                    href={item.href}
+                                    className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-colors border ${isActive
+                                        ? 'bg-[#ddf4ff] text-[#0969da] border-[#54aeff66]'
+                                        : 'text-[#57606a] border-transparent hover:bg-[#f6f8fa] hover:text-[#1f2328]'
+                                        }`}
+                                >
+                                    <Icon size={20} />
+                                    <div>
+                                        <span className="font-medium block">{item.labelZh}</span>
+                                        <span className="text-xs text-[#6e7781]">{item.label}</span>
+                                    </div>
+                                </Link>
+                            </li>
+                        )
+                    })}
+                </ul>
+            </nav>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-[#d8dee4]">
+                <div className="relative">
+                    <button
+                        onClick={() => setMenuOpen(!menuOpen)}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-[#f6f8fa] transition-colors"
+                    >
+                        <div className="w-10 h-10 rounded-full bg-[#0969da] text-white flex items-center justify-center font-semibold">
+                            {initials}
+                        </div>
+                        <div className="text-left">
+                            <div className="text-sm font-medium text-[#1f2328]">个人中心</div>
+                            <div className="text-xs text-[#57606a] truncate w-36">
+                                {email ?? '未登录'}
+                            </div>
+                        </div>
+                    </button>
+
+                    {menuOpen && (
+                        <div className="absolute bottom-14 left-0 w-full bg-white border border-[#d0d7de] rounded-xl shadow-lg py-2 z-10">
+                            <Link
+                                href="/profile"
+                                className="block px-4 py-2 text-sm text-[#24292f] hover:bg-[#f6f8fa]"
+                                onClick={() => setMenuOpen(false)}
+                            >
+                                进入个人中心
+                            </Link>
+                            <button
+                                onClick={handleSignOut}
+                                className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                            >
+                                退出登录
+                            </button>
+                        </div>
+                    )}
+>>>>>>> fix(style): change style
                 </div>
             </div>
         </header>

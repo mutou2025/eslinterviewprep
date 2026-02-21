@@ -96,6 +96,7 @@ function SubmitFormContent() {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )
     }
@@ -153,6 +154,7 @@ function SubmitFormContent() {
                         value={companyId}
                         onChange={e => setCompanyId(e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">选择公司...</option>
                         {companies.map(c => (
@@ -172,6 +174,7 @@ function SubmitFormContent() {
                         rows={4}
                         placeholder="输入面试问题，支持 Markdown 格式..."
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                     />
                     <p className="text-xs text-gray-400 mt-1">支持 Markdown：**粗体**、*斜体*、列表等</p>
                 </div>
@@ -186,6 +189,7 @@ function SubmitFormContent() {
                         onChange={e => setAnswer(e.target.value)}
                         rows={6}
                         placeholder="输入参考答案，支持 Markdown 格式..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                         className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                     />
                 </div>
@@ -202,6 +206,7 @@ function SubmitFormContent() {
                                 type="button"
                                 onClick={() => toggleTag(tag)}
                                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedTags.includes(tag)
+                                        ? 'bg-blue-600 text-white'
                                         ? 'bg-blue-600 text-white'
                                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
@@ -224,6 +229,7 @@ function SubmitFormContent() {
                     type="submit"
                     disabled={submitting}
                     className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {submitting ? (
                         <>
@@ -243,6 +249,7 @@ export default function SubmitPage() {
     return (
         <Suspense fallback={
             <div className="flex items-center justify-center min-h-[50vh]">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         }>

@@ -46,11 +46,13 @@ function QuestionCard({ question }: { question: LabourQuestion }) {
                     <button
                         onClick={() => setExpanded(!expanded)}
                         className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
+                        className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 font-medium"
                     >
                         {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                         {expanded ? '收起答案' : '查看参考答案'}
                     </button>
                     {expanded && (
+                        <div className="mt-3 p-4 bg-blue-50 rounded-lg prose prose-sm max-w-none">
                         <div className="mt-3 p-4 bg-blue-50 rounded-lg prose prose-sm max-w-none">
                             <ReactMarkdown>{question.answer}</ReactMarkdown>
                         </div>
@@ -88,6 +90,7 @@ export default function CompanyQuestionsPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )

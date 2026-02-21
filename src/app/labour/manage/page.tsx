@@ -139,6 +139,7 @@ export default function ManageCompaniesPage() {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )
     }
@@ -177,6 +178,7 @@ export default function ManageCompaniesPage() {
                     <button
                         onClick={() => setShowAddForm(true)}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
                     >
                         <Plus size={18} />
                         新增公司
@@ -186,6 +188,7 @@ export default function ManageCompaniesPage() {
 
             {/* Add Form */}
             {showAddForm && (
+                <form onSubmit={handleAddCompany} className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                 <form onSubmit={handleAddCompany} className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
@@ -202,6 +205,7 @@ export default function ManageCompaniesPage() {
                                 }}
                                 placeholder="如：Amazon"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div>
@@ -213,6 +217,7 @@ export default function ManageCompaniesPage() {
                                 value={newCompanyId}
                                 onChange={e => setNewCompanyId(e.target.value)}
                                 placeholder="如：amazon"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             <p className="text-xs text-gray-400 mt-1">用于 URL，只能包含小写字母和连字符</p>
@@ -227,6 +232,7 @@ export default function ManageCompaniesPage() {
                         <button
                             type="submit"
                             disabled={addLoading}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
                             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
                         >
                             {addLoading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
@@ -259,6 +265,7 @@ export default function ManageCompaniesPage() {
                                     type="text"
                                     value={editingName}
                                     onChange={e => setEditingName(e.target.value)}
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     onKeyDown={e => {
                                         if (e.key === 'Enter') handleUpdateCompany(company.id)
@@ -295,6 +302,7 @@ export default function ManageCompaniesPage() {
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => startEdit(company)}
+                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="编辑"
                                     >
