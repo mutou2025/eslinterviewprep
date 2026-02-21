@@ -21,19 +21,12 @@ function LoadingScreen({ title, subtitle }: { title: string; subtitle: string })
                     </div>
 
                     <h2 className="text-xl font-bold text-[#1f2328] mb-2">
-<<<<<<< HEAD
+
                         {title}
                     </h2>
 
                     <p className="text-[#57606a] mb-4">
                         {subtitle}
-=======
-                        正在初始化
-                    </h2>
-
-                    <p className="text-[#57606a] mb-4">
-                        正在加载用户数据，请稍候...
->>>>>>> fix(style): change style
                     </p>
                 </div>
             </div>
@@ -51,11 +44,9 @@ function ErrorScreen({ title, error, onRetry, retryLabel }: { title: string; err
                     </div>
 
                     <h2 className="text-xl font-bold text-[#1f2328] mb-2">
-<<<<<<< HEAD
-                        {title}
-=======
+
                         初始化失败
->>>>>>> fix(style): change style
+
                     </h2>
 
                     <p className="text-[#57606a] mb-4">
