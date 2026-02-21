@@ -4,21 +4,28 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Plus, PlayCircle, Trash2 } from 'lucide-react'
 import { createList as createListRemote, deleteList as deleteListRemote, getLists } from '@/lib/data-service'
+import { useI18n } from '@/i18n/provider'
 import type { CardList } from '@/types'
 
 export default function ListsPage() {
+    const { uiLanguage } = useI18n()
     const [lists, setLists] = useState<CardList[]>([])
     const [isCreating, setIsCreating] = useState(false)
     const [newListName, setNewListName] = useState('')
 
     useEffect(() => {
-        loadLists()
+        let cancelled = false
+        async function loadData() {
+            const allLists = await getLists()
+            if (!cancelled) {
+                setLists(allLists)
+            }
+        }
+        loadData()
+        return () => {
+            cancelled = true
+        }
     }, [])
-
-    async function loadLists() {
-        const allLists = await getLists()
-        setLists(allLists)
-    }
 
     const handleCreateList = useCallback(async () => {
         if (!newListName.trim()) return
@@ -32,11 +39,11 @@ export default function ListsPage() {
     }, [newListName])
 
     const handleDeleteList = useCallback(async (listId: string) => {
-        if (!confirm('确定要删除这个列表吗？')) return
+        if (!confirm(uiLanguage === 'en-US' ? 'Delete this list?' : '确定要删除这个列表吗？')) return
 
         await deleteListRemote(listId)
         setLists(prev => prev.filter(l => l.id !== listId))
-    }, [])
+    }, [uiLanguage])
 
     return (
         <div className="p-8">

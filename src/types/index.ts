@@ -73,8 +73,14 @@ export interface Card {
 
   // 内容
   title: string
+  titleZh?: string
+  titleEn?: string
   question: string
+  questionZh?: string
+  questionEn?: string
   answer?: string
+  answerZh?: string
+  answerEn?: string
 
   // 标签系统
   questionType: QuestionType
@@ -203,4 +209,3 @@ export interface LabourQuestion {
   createdAt: Date
   updatedAt: Date
 }
-

@@ -6,10 +6,13 @@ import { useRouter } from 'next/navigation'
 import { Search, PlayCircle, CheckSquare, Square } from 'lucide-react'
 import { MasteryBadge } from '@/components/MasteryBadge'
 import { createList, getCardSummariesPageCached, getCategories, initializeDefaultData } from '@/lib/data-service'
+import { useI18n } from '@/i18n/provider'
+import { getLocalizedCardContent, getLocalizedCategoryName } from '@/i18n/content'
 import type { Card, Category } from '@/types'
 
 export default function LibraryPage() {
     const router = useRouter()
+    const { t, contentLanguage } = useI18n()
     const [cards, setCards] = useState<Card[]>([])
     const [categories, setCategories] = useState<Category[]>([])
     const [searchQuery, setSearchQuery] = useState('')
@@ -76,12 +79,12 @@ export default function LibraryPage() {
         if (selectedCards.size === 0) return
 
         // 创建临时列表保存选中的卡片
-        const list = await createList(`临时学习 (${selectedCards.size}题)`, Array.from(selectedCards))
+        const list = await createList(t('library.tempListName', { count: selectedCards.size }), Array.from(selectedCards))
         if (!list) return
 
         // 跳转到复习页面
         router.push(`/review/qa?scope=list:${list.id}`)
-    }, [selectedCards, router])
+    }, [selectedCards, router, t])
 
     // 计算派生状态
     const isAllSelected = cards.length > 0 && selectedCards.size === cards.length
@@ -102,8 +105,8 @@ export default function LibraryPage() {
                 {/* 标题和操作 */}
                 <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">题库</h1>
-                        <p className="text-gray-500 mt-1">{total} 道面试题</p>
+                        <h1 className="text-2xl font-bold text-gray-900">{t('library.title')}</h1>
+                        <p className="text-gray-500 mt-1">{t('library.totalQuestions', { count: total })}</p>
                     </div>
                     <div className="flex items-center gap-3">
                         {selectedCards.size > 0 && (
@@ -112,7 +115,7 @@ export default function LibraryPage() {
                                 className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                             >
                                 <PlayCircle size={18} />
-                                学习选中 ({selectedCards.size})
+                                {t('library.studySelected', { count: selectedCards.size })}
                             </button>
                         )}
                         <Link
@@ -120,7 +123,7 @@ export default function LibraryPage() {
                             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             <PlayCircle size={18} />
-                            开始复习
+                            {t('library.startReview')}
                         </Link>
                     </div>
                 </div>
@@ -131,7 +134,7 @@ export default function LibraryPage() {
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                         <input
                             type="text"
-                            placeholder="搜索题目..."
+                            placeholder={t('library.searchPlaceholder')}
                             value={searchQuery}
                             onChange={(e) => {
                                 setSearchQuery(e.target.value)
@@ -148,9 +151,9 @@ export default function LibraryPage() {
                         }}
                         className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
-                        <option value="">所有分类</option>
+                        <option value="">{t('library.allCategories')}</option>
                         {categories.map(cat => (
-                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                            <option key={cat.id} value={cat.id}>{getLocalizedCategoryName(cat, contentLanguage)}</option>
                         ))}
                     </select>
                 </div>
@@ -169,7 +172,7 @@ export default function LibraryPage() {
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                         >
-                            {cat.name}
+                            {getLocalizedCategoryName(cat, contentLanguage)}
                         </button>
                     ))}
                 </div>
@@ -186,11 +189,11 @@ export default function LibraryPage() {
                             ) : (
                                 <Square size={18} />
                             )}
-                            {isAllSelected ? '取消全选' : '全选'}
+                            {isAllSelected ? t('library.deselectAll') : t('library.selectAll')}
                         </button>
                         {selectedCards.size > 0 && (
                             <span className="text-sm text-gray-500">
-                                已选择 {selectedCards.size} 题
+                                {t('library.selectedCount', { count: selectedCards.size })}
                             </span>
                         )}
                     </div>
@@ -199,8 +202,8 @@ export default function LibraryPage() {
                 {/* 卡片列表 */}
                 {cards.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-500">暂无题目</p>
-                        <p className="text-sm text-gray-400 mt-2">请运行同步脚本导入题库</p>
+                        <p className="text-gray-500">{t('library.empty')}</p>
+                        <p className="text-sm text-gray-400 mt-2">{t('library.emptyHint')}</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -235,10 +238,10 @@ export default function LibraryPage() {
                                                     {card.categoryL3Id}
                                                 </span>
                                                 <span className="text-sm font-medium text-gray-700">
-                                                    {card.title}
+                                                    {getLocalizedCardContent(card, contentLanguage).title}
                                                 </span>
                                             </div>
-                                            <p className="text-gray-500 text-sm">点击查看详情</p>
+                                            <p className="text-gray-500 text-sm">{t('library.viewDetails')}</p>
                                         </Link>
 
                                         {/* 掌握度 */}
@@ -258,17 +261,17 @@ export default function LibraryPage() {
                             disabled={page <= 1}
                             className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-50"
                         >
-                            上一页
+                            {t('library.prevPage')}
                         </button>
                         <span className="text-sm text-gray-500">
-                            第 {page} / {totalPages} 页
+                            {t('library.page', { page, total: totalPages })}
                         </span>
                         <button
                             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                             disabled={page >= totalPages}
                             className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-50"
                         >
-                            下一页
+                            {t('library.nextPage')}
                         </button>
                     </div>
                 )}

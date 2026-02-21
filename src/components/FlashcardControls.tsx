@@ -1,6 +1,7 @@
 'use client'
 
 import { ChevronLeft, ChevronRight, Play, Shuffle, Maximize2, Pause } from 'lucide-react'
+import { useI18n } from '@/i18n/provider'
 
 interface FlashcardControlsProps {
     currentIndex: number
@@ -23,6 +24,8 @@ export function FlashcardControls({
     onPlay,
     onFullscreen
 }: FlashcardControlsProps) {
+    const { t } = useI18n()
+
     return (
         <div className="flex items-center justify-center gap-4 py-4">
             {/* 播放按钮 */}
@@ -30,7 +33,7 @@ export function FlashcardControls({
                 <button
                     onClick={onPlay}
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                    title={isPlaying ? '暂停' : '自动播放'}
+                    title={isPlaying ? t('controls.pause') : t('controls.autoplay')}
                 >
                     {isPlaying ? <Pause size={20} /> : <Play size={20} />}
                 </button>
@@ -41,7 +44,7 @@ export function FlashcardControls({
                 <button
                     onClick={onShuffle}
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="随机顺序"
+                    title={t('controls.shuffle')}
                 >
                     <Shuffle size={20} />
                 </button>
@@ -75,7 +78,7 @@ export function FlashcardControls({
                 <button
                     onClick={onFullscreen}
                     className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                    title="全屏"
+                    title={t('controls.fullscreen')}
                 >
                     <Maximize2 size={20} />
                 </button>

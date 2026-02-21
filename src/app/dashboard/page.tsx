@@ -5,9 +5,12 @@ import Link from 'next/link'
 import { PlayCircle, TrendingUp, Clock, Target, Flame } from 'lucide-react'
 import { MasteryProgress } from '@/components/MasteryBadge'
 import { getCategories, getMasteryStats, getDomainStats, initializeDefaultData, getDueCount } from '@/lib/data-service'
+import { useI18n } from '@/i18n/provider'
+import { getLocalizedCategoryName } from '@/i18n/content'
 import type { MasteryStatus, Category } from '@/types'
 
 export default function DashboardPage() {
+    const { contentLanguage } = useI18n()
     const [masteryStats, setMasteryStats] = useState<Record<MasteryStatus, number>>({
         new: 0, fuzzy: 0, 'can-explain': 0, solid: 0
     })
@@ -15,7 +18,7 @@ export default function DashboardPage() {
     const [categories, setCategories] = useState<Category[]>([])
     const [totalCards, setTotalCards] = useState(0)
     const [dueCount, setDueCount] = useState(0)
-    const [streak, setStreak] = useState(0)
+    const [streak] = useState(0)
 
     useEffect(() => {
         async function loadData() {
@@ -129,7 +132,7 @@ export default function DashboardPage() {
                                     href={`/library/categories/${cat.id}`}
                                     className="p-4 border border-[#d8dee4] rounded-xl hover:border-[#b6e3ff] hover:bg-[#f6f8fa] transition-colors"
                                 >
-                                    <div className="font-medium text-[#1f2328]">{cat.name}</div>
+                                    <div className="font-medium text-[#1f2328]">{getLocalizedCategoryName(cat, contentLanguage)}</div>
                                     <div className="text-sm text-[#57606a] mt-1">
                                         {stats.solid} / {stats.total} 已掌握
                                     </div>

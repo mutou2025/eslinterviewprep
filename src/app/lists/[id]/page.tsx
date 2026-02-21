@@ -6,11 +6,14 @@ import Link from 'next/link'
 import { ArrowLeft, PlayCircle, CheckSquare, Square, Trash2 } from 'lucide-react'
 import { MasteryBadge } from '@/components/MasteryBadge'
 import { createList, getCardsByList, getListById, updateList } from '@/lib/data-service'
+import { useI18n } from '@/i18n/provider'
+import { getLocalizedCardContent } from '@/i18n/content'
 import type { Card, CardList } from '@/types'
 
 export default function ListDetailPage() {
     const params = useParams()
     const router = useRouter()
+    const { uiLanguage, contentLanguage } = useI18n()
     const listId = params.id as string
 
     const [list, setList] = useState<CardList | null>(null)
@@ -68,7 +71,11 @@ export default function ListDetailPage() {
 
     const removeSelected = useCallback(async () => {
         if (selectedCards.size === 0 || !list) return
-        if (!confirm(`确定要从列表移除 ${selectedCards.size} 道题吗？`)) return
+        if (!confirm(
+            uiLanguage === 'en-US'
+                ? `Remove ${selectedCards.size} question(s) from this list?`
+                : `确定要从列表移除 ${selectedCards.size} 道题吗？`
+        )) return
 
         const newCardIds = list.cardIds.filter(id => !selectedCards.has(id))
         await updateList(listId, { cardIds: newCardIds })
@@ -76,7 +83,7 @@ export default function ListDetailPage() {
         setList(prev => prev ? { ...prev, cardIds: newCardIds } : null)
         setCards(prev => prev.filter(c => !selectedCards.has(c.id)))
         setSelectedCards(new Set())
-    }, [selectedCards, list, listId])
+    }, [selectedCards, list, listId, uiLanguage])
 
     // 计算派生状态
     const isAllSelected = cards.length > 0 && selectedCards.size === cards.length
@@ -211,7 +218,7 @@ export default function ListDetailPage() {
                                                     {card.categoryL3Id}
                                                 </span>
                                                 <span className="text-sm font-medium text-gray-700">
-                                                    {card.title}
+                                                    {getLocalizedCardContent(card, contentLanguage).title}
                                                 </span>
                                             </div>
                                             <p className="text-gray-500 text-sm">点击查看详情</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useI18n } from '@/i18n/provider'
 import { ensureCardsAvailable, initializeDefaultData } from '@/lib/data-service'
 import { getSupabaseClient } from '@/lib/supabase-client'
 
@@ -9,7 +10,7 @@ interface Props {
     children: React.ReactNode
 }
 
-function LoadingScreen() {
+function LoadingScreen({ title, subtitle }: { title: string; subtitle: string }) {
     return (
         <div className="fixed inset-0 bg-[#f6f8fa] flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-sm border border-[#d0d7de]">
@@ -20,11 +21,11 @@ function LoadingScreen() {
                     </div>
 
                     <h2 className="text-xl font-bold text-[#1f2328] mb-2">
-                        正在初始化
+                        {title}
                     </h2>
 
                     <p className="text-[#57606a] mb-4">
-                        正在加载用户数据，请稍候...
+                        {subtitle}
                     </p>
                 </div>
             </div>
@@ -32,7 +33,7 @@ function LoadingScreen() {
     )
 }
 
-function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void }) {
+function ErrorScreen({ title, error, onRetry, retryLabel }: { title: string; error: string; onRetry: () => void; retryLabel: string }) {
     return (
         <div className="fixed inset-0 bg-[#f6f8fa] flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-sm border border-[#d0d7de]">
@@ -42,7 +43,7 @@ function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void })
                     </div>
 
                     <h2 className="text-xl font-bold text-[#1f2328] mb-2">
-                        初始化失败
+                        {title}
                     </h2>
 
                     <p className="text-[#57606a] mb-4">
@@ -53,7 +54,7 @@ function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void })
                         onClick={onRetry}
                         className="px-6 py-2 bg-[#0969da] text-white rounded-lg hover:bg-[#0860ca] transition-colors"
                     >
-                        重试
+                        {retryLabel}
                     </button>
                 </div>
             </div>
@@ -62,6 +63,7 @@ function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void })
 }
 
 export function DataInitializer({ children }: Props) {
+    const { t } = useI18n()
     const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
     const [error, setError] = useState<string>('')
     const pathname = usePathname()
@@ -129,8 +131,20 @@ export function DataInitializer({ children }: Props) {
     // 使用单一 return 语句，避免条件性 early return
     return (
         <>
-            {status === 'loading' && <LoadingScreen />}
-            {status === 'error' && <ErrorScreen error={error} onRetry={() => window.location.reload()} />}
+            {status === 'loading' && (
+                <LoadingScreen
+                    title={t('initializer.initializing')}
+                    subtitle={t('initializer.loadingData')}
+                />
+            )}
+            {status === 'error' && (
+                <ErrorScreen
+                    title={t('initializer.failed')}
+                    error={error}
+                    retryLabel={t('common.retry')}
+                    onRetry={() => window.location.reload()}
+                />
+            )}
             {status === 'ready' && children}
         </>
     )

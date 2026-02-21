@@ -4,6 +4,7 @@ import "./globals.css";
 import { DataInitializer } from "@/components/DataInitializer";
 import { AppShell } from "@/components/AppShell";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { I18nProvider } from "@/i18n/provider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,9 +46,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <DataInitializer>
-          <AppShell>{children}</AppShell>
-        </DataInitializer>
+        <I18nProvider>
+          <DataInitializer>
+            <AppShell>{children}</AppShell>
+          </DataInitializer>
+        </I18nProvider>
         <SpeedInsights />
       </body>
     </html>

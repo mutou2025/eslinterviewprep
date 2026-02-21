@@ -9,12 +9,15 @@ import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import { MasteryBadge } from '@/components/MasteryBadge'
 import { getCardAnswer, getCardSummary, getDefaultList, updateList } from '@/lib/data-service'
+import { useI18n } from '@/i18n/provider'
+import { getLocalizedCardContent } from '@/i18n/content'
 import type { Card } from '@/types'
 import 'highlight.js/styles/github-dark.css'
 
 export default function CardDetailPage() {
     const params = useParams()
     const router = useRouter()
+    const { t, contentLanguage } = useI18n()
     const cardId = params.id as string
 
     const [card, setCard] = useState<Card | null>(null)
@@ -38,6 +41,8 @@ export default function CardDetailPage() {
     }, [cardId])
 
     // 所有回调函数在 early return 之前定义
+    const localized = card ? getLocalizedCardContent(card, contentLanguage) : null
+
     const loadAnswer = useCallback(async () => {
         if (!card || card.answer) {
             setShowAnswer(true)
@@ -79,9 +84,9 @@ export default function CardDetailPage() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-500 mb-4">题目不存在</p>
+                    <p className="text-gray-500 mb-4">{t('card.notFound')}</p>
                     <Link href="/library" className="text-blue-600 hover:underline">
-                        返回题库
+                        {t('card.backLibrary')}
                     </Link>
                 </div>
             </div>
@@ -98,7 +103,7 @@ export default function CardDetailPage() {
                         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
                     >
                         <ArrowLeft size={20} />
-                        返回
+                        {t('card.back')}
                     </button>
 
                     <div className="flex items-center gap-3">
@@ -108,7 +113,7 @@ export default function CardDetailPage() {
                                 ? 'bg-yellow-100 text-yellow-600'
                                 : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                                 }`}
-                            title={isFavorite ? '取消收藏' : '加入收藏'}
+                            title={isFavorite ? t('card.removeFavorite') : t('card.addFavorite')}
                         >
                             <Star size={20} fill={isFavorite ? 'currentColor' : 'none'} />
                         </button>
@@ -117,7 +122,7 @@ export default function CardDetailPage() {
                             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             <PlayCircle size={18} />
-                            速记卡模式
+                            {t('card.quickReview')}
                         </Link>
                     </div>
                 </div>
@@ -133,12 +138,12 @@ export default function CardDetailPage() {
                             <MasteryBadge mastery={card.mastery} size="sm" />
                             {card.upstreamSource && (
                                 <span className="text-xs text-gray-400">
-                                    来源: {card.upstreamSource}
+                                    {t('card.source')}: {card.upstreamSource}
                                 </span>
                             )}
                         </div>
                         <h1 className="text-xl font-bold text-gray-900">
-                            {card.question}
+                            {localized?.question || card.question}
                         </h1>
                     </div>
 
@@ -146,14 +151,14 @@ export default function CardDetailPage() {
                     <div className="p-6">
                         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                             <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
-                            参考答案
+                            {t('card.referenceAnswer')}
                         </h2>
                         {!showAnswer && (
                             <button
                                 onClick={loadAnswer}
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
-                                {isAnswerLoading ? '加载中...' : '显示答案'}
+                                {isAnswerLoading ? t('common.loading') : t('card.showAnswer')}
                             </button>
                         )}
                         <div className="prose prose-blue max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
@@ -161,7 +166,7 @@ export default function CardDetailPage() {
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeHighlight]}
                             >
-                                {showAnswer ? (card.answer || '暂无答案') : ''}
+                                {showAnswer ? (localized?.answer || t('flashcard.noAnswer')) : ''}
                             </ReactMarkdown>
                         </div>
                     </div>
@@ -170,11 +175,11 @@ export default function CardDetailPage() {
                     <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
                         <div className="flex items-center justify-between text-sm text-gray-500">
                             <div className="flex items-center gap-4">
-                                <span>复习次数: {card.reviewCount}</span>
-                                <span>难度: {card.difficulty}</span>
+                                <span>{t('card.reviewCount')}: {card.reviewCount}</span>
+                                <span>{t('card.difficulty')}: {card.difficulty}</span>
                             </div>
                             <span>
-                                上次复习: {card.updatedAt ? new Date(card.updatedAt).toLocaleDateString() : '从未'}
+                                {t('card.lastReviewed')}: {card.updatedAt ? new Date(card.updatedAt).toLocaleDateString() : t('card.never')}
                             </span>
                         </div>
                     </div>
