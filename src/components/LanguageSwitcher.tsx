@@ -37,7 +37,7 @@ export function LanguageSwitcher() {
             </button>
 
             {open && (
-                <div className="absolute bottom-11 right-0 w-60 bg-white border border-[#CBD5E1] rounded-xl shadow-lg p-3 z-20 space-y-3">
+                <div className="absolute top-full mt-2 right-0 w-60 bg-white border border-[#CBD5E1] rounded-xl shadow-lg p-3 z-[140] space-y-3">
                     <div>
                         <p className="text-xs text-[#475569] mb-2">{t('language.ui')}</p>
                         <div className="grid grid-cols-2 gap-2">

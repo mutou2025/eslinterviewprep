@@ -42,6 +42,16 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         document.documentElement.lang = uiLanguage === 'zh-CN' ? 'zh-CN' : 'en'
     }, [uiLanguage])
 
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        if (!window.localStorage.getItem(UI_LANG_KEY)) {
+            window.localStorage.setItem(UI_LANG_KEY, 'zh-CN')
+        }
+        if (!window.localStorage.getItem(CONTENT_LANG_KEY)) {
+            window.localStorage.setItem(CONTENT_LANG_KEY, 'zh-CN')
+        }
+    }, [])
+
     const setUiLanguage = useCallback((language: UILanguage) => {
         setUiLanguageState(language)
         if (typeof window !== 'undefined') {

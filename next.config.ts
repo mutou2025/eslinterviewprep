@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   // reactCompiler: true, // 暂时禁用，存在 hooks 兼容性问题
+  devIndicators: false,
   async redirects() {
     return [
       {
