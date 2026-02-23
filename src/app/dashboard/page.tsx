@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { PlayCircle, TrendingUp, Clock, Target, Flame } from 'lucide-react'
 import { MasteryProgress } from '@/components/MasteryBadge'
@@ -161,7 +162,7 @@ function KPICard({
     value,
     subtext
 }: {
-    icon: React.ReactNode
+    icon: ReactNode
     label: string
     value: number | string
     subtext: string

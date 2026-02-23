@@ -159,6 +159,25 @@ npm run sync     # 同步上游题库到本地 JSON
 - 未配置 Supabase 时，页面会显示配置提示，不会正常读取用户数据。
 - 项目目前没有完整自动化测试；改动后建议手动回归：登录/登出、空库引导到 `/data-management`、导入题库、题库筛选（URL 持久化）、复习流程与掌握度更新。
 
+## 提交规范
+1️⃣ 先同步 main
+git checkout main
+git fetch upstream
+git rebase upstream/main
+git push origin main
+
+2️⃣ 新建功能分支
+git checkout -b feature/i18n-fix
+
+3️⃣ 改代码
+git add .
+git commit -m "feat: i18n"
+
+4️⃣ 推送分支
+git push -u origin feature/i18n-fix
+
+5️⃣ 用 feature 分支提 PR
+
 ## 9. 参考文档
 
 - 项目概览：`PROJECT_SUMMARY.md`（历史资料，部分信息可能过期，以代码为准）
