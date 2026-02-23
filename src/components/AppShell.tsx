@@ -9,9 +9,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     // 使用单一 return 避免条件性渲染问题
     return (
-        <div className="flex min-h-screen bg-[#f6f8fa]">
+        <div className="flex flex-col min-h-screen bg-[#f6f8fa]">
             {showSidebar ? <Sidebar /> : null}
-            <main className={`flex-1 ${showSidebar ? 'ml-72' : ''}`}>
+            <main className="flex-1">
                 {children}
             </main>
         </div>
