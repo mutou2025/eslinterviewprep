@@ -278,13 +278,13 @@ export default function CardDetailPage() {
         }
         setIsAnswerLoading(true)
         try {
-            const answer = await getCardAnswer(card.id)
+            const answer = await getCardAnswer(card.id, contentLanguage)
             setCard(prev => prev ? { ...prev, answer: answer || undefined } : null)
             setShowAnswer(true)
         } finally {
             setIsAnswerLoading(false)
         }
-    }, [card])
+    }, [card, contentLanguage])
 
     const toggleFavorite = useCallback(async () => {
         const favList = await getDefaultList()

@@ -13,6 +13,7 @@
 - 复习模式：`/review/[mode]`，闪卡翻转 + 掌握度标注 + 键盘快捷键。
 - 我的题目：`/lists`（从头像下拉进入）。
 - 数据与管理：`/data-management`（从头像下拉进入，支持导入题库与上传题目）。
+- 上传面试题支持中英文双语内容：可自动生成英文草稿，并支持手动编辑后保存。
 - 行为面试：`/behavior-interview`、`/company-interviews`。
 - 中英文切换：UI 与内容语言支持 `zh-CN` / `en-US`，默认中文。
 
@@ -55,6 +56,7 @@ cp .env.example .env.local
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
+OPENAI_API_KEY=... # 可选，用于上传时自动生成英文草稿
 ```
 
 ### 3.4 初始化 Supabase
@@ -64,6 +66,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 1. `supabase/schema.sql`
 2. `supabase/schema_labour.sql`（行为面试/公司面试数据）
 3. 已在线项目再执行：`supabase/security_hardening_20260223.sql`（收紧读取策略）
+4. 已在线项目再执行：`supabase/multilingual_cards_20260223.sql`（新增双语字段）
 
 ### 3.5 启动项目
 

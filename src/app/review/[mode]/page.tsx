@@ -18,7 +18,7 @@ interface ReviewPageProps {
 export default function ReviewPage({ params }: ReviewPageProps) {
     const searchParams = useSearchParams()
     const scope = searchParams.get('scope') || 'all'
-    const { t } = useI18n()
+    const { t, contentLanguage } = useI18n()
 
     const [isLoading, setIsLoading] = useState(true)
     const [answerLoadingIds, setAnswerLoadingIds] = useState<Set<string>>(new Set())
@@ -146,8 +146,8 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         })
 
         try {
-            const answer = await getCardAnswer(currentCard.id)
-            setCardAnswer(currentCard.id, answer)
+            const localizedAnswer = await getCardAnswer(currentCard.id, contentLanguage)
+            setCardAnswer(currentCard.id, localizedAnswer)
         } finally {
             setAnswerLoadingIds(prev => {
                 const updated = new Set(prev)
@@ -155,7 +155,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                 return updated
             })
         }
-    }, [currentCard, answerLoadingIds, setCardAnswer])
+    }, [currentCard, answerLoadingIds, setCardAnswer, contentLanguage])
 
     // 加载中
     if (isLoading) {

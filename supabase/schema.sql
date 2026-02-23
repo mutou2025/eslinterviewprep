@@ -49,8 +49,14 @@ create table if not exists public.cards (
     category_l2_id text not null,
     category_l3_id text not null,
     title text not null,
+    title_zh text,
+    title_en text,
     question text not null,
+    question_zh text,
+    question_en text,
     answer text,
+    answer_zh text,
+    answer_en text,
     question_type text not null,
     difficulty text not null,
     frequency text not null,
@@ -70,8 +76,14 @@ alter table public.cards add column if not exists category_l1_id text;
 alter table public.cards add column if not exists category_l2_id text;
 alter table public.cards add column if not exists category_l3_id text;
 alter table public.cards add column if not exists title text;
+alter table public.cards add column if not exists title_zh text;
+alter table public.cards add column if not exists title_en text;
 alter table public.cards add column if not exists question text;
+alter table public.cards add column if not exists question_zh text;
+alter table public.cards add column if not exists question_en text;
 alter table public.cards add column if not exists answer text;
+alter table public.cards add column if not exists answer_zh text;
+alter table public.cards add column if not exists answer_en text;
 alter table public.cards add column if not exists question_type text;
 alter table public.cards add column if not exists difficulty text;
 alter table public.cards add column if not exists frequency text;

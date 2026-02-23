@@ -7,6 +7,7 @@ import { SettingsContent } from '@/components/SettingsContent'
 import {
     createList as createListRemote,
     createUserCard,
+    generateInterviewEnglishDraft,
     deleteList as deleteListRemote,
     getCategories,
     getLists,
@@ -21,9 +22,11 @@ type UploadMode = 'single' | 'batch'
 
 type SingleUploadState = {
     title: string
+    titleEn: string
     categoryId: string
     knowledgePointId: string
     answer: string
+    answerEn: string
     format: UploadFormat
     targetListId: string
 }
@@ -40,6 +43,8 @@ type BatchUploadEntry = {
     sourceFile: string
     title: string
     answer: string
+    titleEn: string
+    answerEn: string
 }
 
 const UPLOAD_LIST_NAME = '我的上传'
@@ -268,9 +273,11 @@ export function MyListsSection({
 
     const [singleUploadState, setSingleUploadState] = useState<SingleUploadState>({
         title: '',
+        titleEn: '',
         categoryId: '',
         knowledgePointId: '',
         answer: '',
+        answerEn: '',
         format: 'markdown',
         targetListId: '',
     })
@@ -360,7 +367,7 @@ export function MyListsSection({
 
     const openUploadModal = useCallback(() => {
         setUploadMode('single')
-        setSingleUploadState(prev => ({ ...prev, title: '', answer: '' }))
+        setSingleUploadState(prev => ({ ...prev, title: '', titleEn: '', answer: '', answerEn: '' }))
         setBatchUploadEntries([])
         setSingleUploadFeedback(null)
         setBatchUploadFeedback(null)
@@ -419,6 +426,8 @@ export function MyListsSection({
     const handleUploadQuestion = useCallback(async () => {
         const title = singleUploadState.title.trim()
         const answer = singleUploadState.answer.trim()
+        let titleEn = singleUploadState.titleEn.trim()
+        let answerEn = singleUploadState.answerEn.trim()
 
         if (!title) {
             setSingleUploadFeedback({ type: 'error', text: '请填写题目标题。' })
@@ -441,10 +450,22 @@ export function MyListsSection({
         setIsSubmittingSingle(true)
         setSingleUploadFeedback(null)
 
+        if (!titleEn || !answerEn) {
+            const draft = await generateInterviewEnglishDraft({ title, answer })
+            titleEn = draft.titleEn
+            answerEn = draft.answerEn
+        }
+
         const createdCard = await createUserCard({
             title,
+            titleZh: title,
+            titleEn,
             question: title,
+            questionZh: title,
+            questionEn: titleEn,
             answer,
+            answerZh: answer,
+            answerEn,
             categoryL3Id: singleEffectiveCategoryId,
             categoryL2Id: selectedCategory?.parentId || 'web-frontend',
             customTags: [
@@ -474,11 +495,36 @@ export function MyListsSection({
         setSingleUploadState(prev => ({
             ...prev,
             title: '',
-            answer: ''
+            titleEn: '',
+            answer: '',
+            answerEn: ''
         }))
         setIsSubmittingSingle(false)
         setIsUploadModalOpen(false)
     }, [singleUploadState, singleEffectiveCategoryId, singleEffectiveKnowledgePointId, singleEffectiveTargetListId, categories, ensureUploadList, appendCardsToList])
+
+    const handleGenerateSingleEnglishDraft = useCallback(async () => {
+        const title = singleUploadState.title.trim()
+        const answer = singleUploadState.answer.trim()
+        if (!title || !answer) {
+            setSingleUploadFeedback({ type: 'error', text: '请先填写中文标题和答案，再生成英文版。' })
+            return
+        }
+
+        setSingleUploadFeedback(null)
+        setIsSubmittingSingle(true)
+        const draft = await generateInterviewEnglishDraft({ title, answer })
+        setSingleUploadState(prev => ({
+            ...prev,
+            titleEn: draft.titleEn,
+            answerEn: draft.answerEn
+        }))
+        setSingleUploadFeedback({
+            type: 'success',
+            text: draft.generated ? '已生成英文草稿，可继续编辑后上传。' : '未检测到翻译服务，已填充可编辑草稿。'
+        })
+        setIsSubmittingSingle(false)
+    }, [singleUploadState.title, singleUploadState.answer])
 
     const handleBatchImportDocuments = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(event.target.files || [])
@@ -507,7 +553,9 @@ export function MyListsSection({
                         id: `${file.name}-${idx}-${crypto.randomUUID()}`,
                         sourceFile: file.name,
                         title: entry.title,
-                        answer: entry.answer
+                        answer: entry.answer,
+                        titleEn: '',
+                        answerEn: ''
                     })
                 })
             } catch {
@@ -536,6 +584,38 @@ export function MyListsSection({
         event.target.value = ''
     }, [])
 
+    const handleGenerateBatchEnglishDrafts = useCallback(async () => {
+        if (batchUploadEntries.length === 0) {
+            setBatchUploadFeedback({ type: 'error', text: '请先导入文档并识别题目。' })
+            return
+        }
+
+        setIsSubmittingBatch(true)
+        setBatchUploadFeedback(null)
+
+        const nextEntries: BatchUploadEntry[] = []
+        for (const entry of batchUploadEntries) {
+            const hasDraft = entry.titleEn.trim() && entry.answerEn.trim()
+            if (hasDraft) {
+                nextEntries.push(entry)
+                continue
+            }
+            const draft = await generateInterviewEnglishDraft({
+                title: entry.title,
+                answer: entry.answer
+            })
+            nextEntries.push({
+                ...entry,
+                titleEn: draft.titleEn,
+                answerEn: draft.answerEn
+            })
+        }
+
+        setBatchUploadEntries(nextEntries)
+        setBatchUploadFeedback({ type: 'success', text: `已生成 ${nextEntries.length} 道题的英文草稿，可继续手动修改。` })
+        setIsSubmittingBatch(false)
+    }, [batchUploadEntries])
+
     const handleBatchUploadQuestions = useCallback(async () => {
         if (!batchEffectiveCategoryId) {
             setBatchUploadFeedback({ type: 'error', text: '请选择所属技术分类。' })
@@ -558,10 +638,27 @@ export function MyListsSection({
         setBatchUploadFeedback(null)
 
         for (const entry of batchUploadEntries) {
+            let titleEn = entry.titleEn.trim()
+            let answerEn = entry.answerEn.trim()
+            if (!titleEn || !answerEn) {
+                const draft = await generateInterviewEnglishDraft({
+                    title: entry.title,
+                    answer: entry.answer
+                })
+                titleEn = draft.titleEn
+                answerEn = draft.answerEn
+            }
+
             const createdCard = await createUserCard({
                 title: entry.title,
+                titleZh: entry.title,
+                titleEn,
                 question: entry.title,
+                questionZh: entry.title,
+                questionEn: titleEn,
                 answer: entry.answer,
+                answerZh: entry.answer,
+                answerEn,
                 categoryL3Id: batchEffectiveCategoryId,
                 categoryL2Id: selectedCategory?.parentId || 'web-frontend',
                 customTags: [
@@ -840,6 +937,41 @@ export function MyListsSection({
                                         />
                                     </div>
 
+                                    <div className="mb-4 rounded-lg border border-[#DBEAFE] bg-[#F8FBFF] p-3">
+                                        <div className="mb-2 flex items-center justify-between gap-2">
+                                            <p className="text-sm font-medium text-[#1E3A8A]">英文版（自动生成，可编辑）</p>
+                                            <button
+                                                onClick={handleGenerateSingleEnglishDraft}
+                                                disabled={isSubmittingSingle}
+                                                className="px-3 py-1.5 text-xs rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors disabled:opacity-60"
+                                            >
+                                                {isSubmittingSingle ? '生成中...' : '生成英文草稿'}
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-xs text-[#64748B] mb-1">英文标题</label>
+                                                <input
+                                                    type="text"
+                                                    value={singleUploadState.titleEn}
+                                                    onChange={(e) => setSingleUploadState(prev => ({ ...prev, titleEn: e.target.value }))}
+                                                    placeholder="English title"
+                                                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs text-[#64748B] mb-1">英文答案</label>
+                                                <textarea
+                                                    value={singleUploadState.answerEn}
+                                                    onChange={(e) => setSingleUploadState(prev => ({ ...prev, answerEn: e.target.value }))}
+                                                    rows={4}
+                                                    placeholder="English answer"
+                                                    className="w-full px-3 py-2 border border-[#E2E8F0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
                                     {singleUploadFeedback && (
                                         <div className={`mb-3 text-sm ${singleUploadFeedback.type === 'success' ? 'text-[#10B981]' : 'text-red-600'}`}>
                                             {singleUploadFeedback.text}
@@ -940,15 +1072,28 @@ export function MyListsSection({
                                             已识别题目数：<span className="font-semibold">{batchUploadEntries.length}</span>
                                         </div>
                                         {batchUploadEntries.length > 0 && (
-                                            <div className="mt-2 space-y-1 text-xs text-[#94A3B8] max-h-40 overflow-y-auto">
-                                                {batchUploadEntries.slice(0, 12).map(entry => (
-                                                    <div key={entry.id} className="truncate">
-                                                        {entry.title} <span className="text-[#94A3B8]">({entry.sourceFile})</span>
+                                            <div className="mt-2 space-y-2 text-xs max-h-56 overflow-y-auto">
+                                                {batchUploadEntries.map(entry => (
+                                                    <div key={entry.id} className="rounded-lg border border-[#E2E8F0] bg-white p-2">
+                                                        <div className="mb-1 truncate text-[#334155]">
+                                                            {entry.title} <span className="text-[#94A3B8]">({entry.sourceFile})</span>
+                                                        </div>
+                                                        <input
+                                                            type="text"
+                                                            value={entry.titleEn}
+                                                            onChange={(e) => setBatchUploadEntries(prev => prev.map(item => item.id === entry.id ? { ...item, titleEn: e.target.value } : item))}
+                                                            placeholder="英文标题（可编辑）"
+                                                            className="mb-1 w-full px-2 py-1 border border-[#E2E8F0] rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                                                        />
+                                                        <textarea
+                                                            value={entry.answerEn}
+                                                            onChange={(e) => setBatchUploadEntries(prev => prev.map(item => item.id === entry.id ? { ...item, answerEn: e.target.value } : item))}
+                                                            rows={2}
+                                                            placeholder="英文答案（可编辑）"
+                                                            className="w-full px-2 py-1 border border-[#E2E8F0] rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                                                        />
                                                     </div>
                                                 ))}
-                                                {batchUploadEntries.length > 12 && (
-                                                    <div className="text-[#94A3B8]">还有 {batchUploadEntries.length - 12} 道题未展开显示...</div>
-                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -960,6 +1105,13 @@ export function MyListsSection({
                                     )}
 
                                     <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={handleGenerateBatchEnglishDrafts}
+                                            disabled={isSubmittingBatch || batchUploadEntries.length === 0}
+                                            className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors disabled:opacity-60"
+                                        >
+                                            生成全部英文草稿
+                                        </button>
                                         <button
                                             onClick={handleBatchUploadQuestions}
                                             disabled={isSubmittingBatch}
