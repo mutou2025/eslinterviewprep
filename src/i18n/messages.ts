@@ -116,6 +116,7 @@ export const messages = {
         'library.filterCancel': '取消',
         'library.filterApply': '应用',
         'library.allCategories': '所有分类',
+        'library.all': '所有',
         'library.selectAll': '全选',
         'library.deselectAll': '取消全选',
         'library.selectedCount': '已选择 {count} 题',

@@ -55,13 +55,21 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: false, error: '无效的登录状态' }, { status: 401 })
         }
 
+        const { count: cardCount, error: cardCountError } = await supabase
+            .from('cards')
+            .select('id', { count: 'exact', head: true })
+        if (cardCountError) {
+            return NextResponse.json({ success: false, error: cardCountError.message }, { status: 500 })
+        }
+
+        const isBootstrapImport = (cardCount || 0) === 0
         const { data: profile } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', authData.user.id)
             .maybeSingle()
 
-        if (profile?.role !== 'admin') {
+        if (!isBootstrapImport && profile?.role !== 'admin') {
             return NextResponse.json({ success: false, error: '需要管理员权限' }, { status: 403 })
         }
 
