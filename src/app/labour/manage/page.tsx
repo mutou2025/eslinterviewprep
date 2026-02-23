@@ -43,24 +43,26 @@ export default function ManageCompaniesPage() {
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
     useEffect(() => {
+        let cancelled = false
+
+        async function loadData() {
+            const [companiesData, adminStatus] = await Promise.all([
+                getLabourCompanies(),
+                isCurrentUserAdmin(),
+            ])
+
+            if (cancelled) return
+            setCompanies(companiesData)
+            setIsAdmin(adminStatus)
+            setLoading(false)
+        }
+
         loadData()
+
+        return () => {
+            cancelled = true
+        }
     }, [])
-
-    async function loadData() {
-        const [companiesData, adminStatus] = await Promise.all([
-            getLabourCompanies(),
-            isCurrentUserAdmin(),
-        ])
-        setCompanies(companiesData)
-        setIsAdmin(adminStatus)
-        setLoading(false)
-    }
-
-    // Auto-generate ID from name
-    useEffect(() => {
-        if (newCompanyName && !showAddForm) return
-        setNewCompanyId(generateSlug(newCompanyName))
-    }, [newCompanyName, showAddForm])
 
     async function handleAddCompany(e: React.FormEvent) {
         e.preventDefault()
@@ -136,7 +138,7 @@ export default function ManageCompaniesPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )
     }
@@ -147,7 +149,7 @@ export default function ManageCompaniesPage() {
                 <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">权限不足</h2>
                 <p className="text-gray-500 mb-4">只有管理员可以管理公司列表</p>
-                <Link href="/labour" className="text-indigo-600 hover:underline">
+                <Link href="/behavior-interview" className="text-blue-600 hover:underline">
                     返回公司列表
                 </Link>
             </div>
@@ -158,7 +160,7 @@ export default function ManageCompaniesPage() {
         <div className="max-w-3xl mx-auto">
             {/* Back Link */}
             <Link
-                href="/labour"
+                href="/behavior-interview"
                 className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
             >
                 <ArrowLeft size={18} />
@@ -169,12 +171,12 @@ export default function ManageCompaniesPage() {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">管理公司</h1>
-                    <p className="text-gray-500 mt-1">添加、编辑或删除 Labour 面试公司</p>
+                    <p className="text-gray-500 mt-1">添加、编辑或删除 BehaviorInterview 面试公司</p>
                 </div>
                 {!showAddForm && (
                     <button
                         onClick={() => setShowAddForm(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
                     >
                         <Plus size={18} />
                         新增公司
@@ -184,7 +186,7 @@ export default function ManageCompaniesPage() {
 
             {/* Add Form */}
             {showAddForm && (
-                <form onSubmit={handleAddCompany} className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
+                <form onSubmit={handleAddCompany} className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -193,9 +195,13 @@ export default function ManageCompaniesPage() {
                             <input
                                 type="text"
                                 value={newCompanyName}
-                                onChange={e => setNewCompanyName(e.target.value)}
+                                onChange={e => {
+                                    const value = e.target.value
+                                    setNewCompanyName(value)
+                                    setNewCompanyId(generateSlug(value))
+                                }}
                                 placeholder="如：Amazon"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                         </div>
                         <div>
@@ -207,7 +213,7 @@ export default function ManageCompaniesPage() {
                                 value={newCompanyId}
                                 onChange={e => setNewCompanyId(e.target.value)}
                                 placeholder="如：amazon"
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
                             <p className="text-xs text-gray-400 mt-1">用于 URL，只能包含小写字母和连字符</p>
                         </div>
@@ -221,7 +227,7 @@ export default function ManageCompaniesPage() {
                         <button
                             type="submit"
                             disabled={addLoading}
-                            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
                         >
                             {addLoading ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
                             添加
@@ -253,7 +259,7 @@ export default function ManageCompaniesPage() {
                                     type="text"
                                     value={editingName}
                                     onChange={e => setEditingName(e.target.value)}
-                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                     onKeyDown={e => {
                                         if (e.key === 'Enter') handleUpdateCompany(company.id)
                                         if (e.key === 'Escape') cancelEdit()
@@ -289,7 +295,7 @@ export default function ManageCompaniesPage() {
                                 <div className="flex items-center gap-1">
                                     <button
                                         onClick={() => startEdit(company)}
-                                        className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                         title="编辑"
                                     >
                                         <Pencil size={18} />
@@ -314,7 +320,7 @@ export default function ManageCompaniesPage() {
 
                 {companies.length === 0 && (
                     <div className="p-8 text-center text-gray-500">
-                        暂无公司，点击"新增公司"添加
+                        暂无公司，点击“新增公司”添加
                     </div>
                 )}
             </div>

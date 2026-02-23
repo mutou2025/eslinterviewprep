@@ -5,6 +5,8 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
 import type { Card, MasteryStatus } from '@/types'
+import { useI18n } from '@/i18n/provider'
+import { getLocalizedCardContent } from '@/i18n/content'
 import 'highlight.js/styles/github-dark.css'
 
 interface FlashcardProps {
@@ -17,24 +19,24 @@ interface FlashcardProps {
     isAnswerLoading?: boolean
 }
 
-const masteryConfig: Record<MasteryStatus, { label: string; color: string; bg: string }> = {
-    'new': { label: '未学', color: 'text-gray-600', bg: 'bg-gray-100 hover:bg-gray-200' },
-    'fuzzy': { label: '模糊', color: 'text-orange-600', bg: 'bg-orange-100 hover:bg-orange-200' },
-    'can-explain': { label: '会讲', color: 'text-blue-600', bg: 'bg-blue-100 hover:bg-blue-200' },
-    'solid': { label: '熟练', color: 'text-green-600', bg: 'bg-green-100 hover:bg-green-200' }
+const masteryConfig: Record<MasteryStatus, { labelKey: 'mastery.new' | 'mastery.fuzzy' | 'mastery.canExplain' | 'mastery.solid'; color: string; bg: string }> = {
+    'new': { labelKey: 'mastery.new', color: 'text-gray-600', bg: 'bg-gray-100 hover:bg-gray-200' },
+    'fuzzy': { labelKey: 'mastery.fuzzy', color: 'text-orange-600', bg: 'bg-orange-100 hover:bg-orange-200' },
+    'can-explain': { labelKey: 'mastery.canExplain', color: 'text-blue-600', bg: 'bg-blue-100 hover:bg-blue-200' },
+    'solid': { labelKey: 'mastery.solid', color: 'text-green-600', bg: 'bg-green-100 hover:bg-green-200' }
 }
 
-const difficultyConfig: Record<string, { label: string; color: string }> = {
-    'easy': { label: '简单', color: 'bg-green-100 text-green-700' },
-    'must-know': { label: '必考', color: 'bg-red-100 text-red-700' },
-    'hard': { label: '困难', color: 'bg-purple-100 text-purple-700' },
-    'hand-write': { label: '手写', color: 'bg-yellow-100 text-yellow-700' }
+const difficultyConfig: Record<string, { labelKey: 'difficulty.easy' | 'difficulty.mustKnow' | 'difficulty.hard' | 'difficulty.handWrite'; color: string }> = {
+    'easy': { labelKey: 'difficulty.easy', color: 'bg-green-100 text-green-700' },
+    'must-know': { labelKey: 'difficulty.mustKnow', color: 'bg-red-100 text-red-700' },
+    'hard': { labelKey: 'difficulty.hard', color: 'bg-blue-100 text-blue-700' },
+    'hand-write': { labelKey: 'difficulty.handWrite', color: 'bg-yellow-100 text-yellow-700' }
 }
 
-const frequencyConfig: Record<string, { label: string; color: string }> = {
-    'high': { label: '高频', color: 'bg-red-50 text-red-600' },
-    'mid': { label: '中频', color: 'bg-yellow-50 text-yellow-600' },
-    'low': { label: '低频', color: 'bg-gray-50 text-gray-600' }
+const frequencyConfig: Record<string, { labelKey: 'frequency.high' | 'frequency.mid' | 'frequency.low'; color: string }> = {
+    'high': { labelKey: 'frequency.high', color: 'bg-red-50 text-red-600' },
+    'mid': { labelKey: 'frequency.mid', color: 'bg-yellow-50 text-yellow-600' },
+    'low': { labelKey: 'frequency.low', color: 'bg-gray-50 text-gray-600' }
 }
 
 export function Flashcard({
@@ -46,8 +48,10 @@ export function Flashcard({
     onLoadAnswer,
     isAnswerLoading = false
 }: FlashcardProps) {
+    const { t, contentLanguage } = useI18n()
     const cardContainerRef = useRef<HTMLDivElement>(null)
     const answerContentRef = useRef<HTMLDivElement>(null)
+    const localized = getLocalizedCardContent(card, contentLanguage)
 
     // 翻转时自动滚动到顶部
     useEffect(() => {
@@ -93,7 +97,7 @@ export function Flashcard({
                             {showTags && (
                                 <div className="flex flex-wrap gap-2 p-4 border-b border-gray-100">
                                     {/* 分类 */}
-                                    <span className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-700 rounded-full">
+                                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
                                         {card.categoryL3Id}
                                     </span>
                                     {/* 题型 */}
@@ -102,11 +106,11 @@ export function Flashcard({
                                     </span>
                                     {/* 频率 */}
                                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${frequencyConfig[card.frequency]?.color || 'bg-gray-100'}`}>
-                                        {frequencyConfig[card.frequency]?.label || card.frequency}
+                                        {frequencyConfig[card.frequency] ? t(frequencyConfig[card.frequency].labelKey) : card.frequency}
                                     </span>
                                     {/* 难度 */}
                                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${difficultyConfig[card.difficulty]?.color || 'bg-gray-100'}`}>
-                                        {difficultyConfig[card.difficulty]?.label || card.difficulty}
+                                        {difficultyConfig[card.difficulty] ? t(difficultyConfig[card.difficulty].labelKey) : card.difficulty}
                                     </span>
                                 </div>
                             )}
@@ -114,18 +118,18 @@ export function Flashcard({
                             {/* 题目内容 */}
                             <div className="flex-1 flex flex-col items-center justify-center p-8">
                                 <h2 className="text-lg font-semibold text-gray-500 mb-4">
-                                    「{card.title}」
+                                    「{localized.title}」
                                 </h2>
-                                <div className="text-xl text-gray-800 text-center prose prose-lg max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+                                <div className="text-xl text-gray-800 text-center prose prose-lg max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
                                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-                                        {card.question}
+                                        {localized.question}
                                     </ReactMarkdown>
                                 </div>
                             </div>
 
                             {/* 底部提示条 */}
                             <div className="bg-[#303545] text-white text-center py-3 rounded-b-3xl flex items-center justify-center gap-2">
-                                <span className="text-sm">单击卡片可翻转</span>
+                                <span className="text-sm">{t('flashcard.clickToFlip')}</span>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
                                 </svg>
@@ -144,7 +148,7 @@ export function Flashcard({
                         <div className="bg-white rounded-3xl shadow-lg min-h-[400px] max-h-[80vh] flex flex-col">
                             {/* 答案标题 */}
                             <div className="p-4 border-b border-gray-100 flex-shrink-0">
-                                <h3 className="text-sm font-medium text-gray-500">答案</h3>
+                                <h3 className="text-sm font-medium text-gray-500">{t('flashcard.answer')}</h3>
                             </div>
 
                             {/* 答案内容 - 可滚动 */}
@@ -153,12 +157,12 @@ export function Flashcard({
                                 className="flex-1 overflow-auto p-6"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-img:shadow-md">
+                                <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-img:shadow-md">
                                     {isAnswerLoading ? (
-                                        <p className="text-sm text-gray-400">答案加载中...</p>
+                                        <p className="text-sm text-gray-400">{t('flashcard.answerLoading')}</p>
                                     ) : (
                                         <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-                                            {card.answer || '暂无答案'}
+                                            {localized.answer || t('flashcard.noAnswer')}
                                         </ReactMarkdown>
                                     )}
                                 </div>
@@ -176,12 +180,12 @@ export function Flashcard({
                                             }}
                                             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${config.bg} ${config.color}`}
                                         >
-                                            {config.label}
+                                            {t(config.labelKey)}
                                         </button>
                                     ))}
                                 </div>
                                 <p className="text-xs text-gray-400 text-center mt-2">
-                                    快捷键：1=未学 2=模糊 3=会讲 4=熟练
+                                    {t('flashcard.shortcuts')}
                                 </p>
                             </div>
                         </div>

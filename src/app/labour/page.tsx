@@ -14,7 +14,7 @@ const companyIcons: Record<string, string> = {
     'fedex': '📮',
 }
 
-export default function LabourPage() {
+export default function BehaviorInterviewPage() {
     const [companies, setCompanies] = useState<LabourCompany[]>([])
     const [loading, setLoading] = useState(true)
     const [isAdmin, setIsAdmin] = useState(false)
@@ -35,26 +35,26 @@ export default function LabourPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )
     }
 
     return (
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto pt-6">
             {/* Header */}
             <div className="mb-8">
                 <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gradient-to-br from-slate-900 to-blue-700 rounded-xl flex items-center justify-center">
                         <Building2 className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Labour 工作面试</h1>
-                        <p className="text-sm text-gray-500">Labour Job Interviews</p>
+                        <h1 className="text-2xl font-bold text-gray-900">行为面试</h1>
+                        <p className="text-sm text-gray-500">Behavior Questions</p>
                     </div>
                 </div>
                 <p className="text-gray-600 mt-4">
-                    收集 Canada Post、LifeLabs、Purolator、FedEx 等北美劳工类工作的行为面试题目。
+                    收集 Canada Post、LifeLabs、Purolator、FedEx 等北美工作的 Behavior Interview 面试题目。
                 </p>
             </div>
 
@@ -62,14 +62,14 @@ export default function LabourPage() {
             {isAdmin && (
                 <div className="mb-6 flex gap-3">
                     <Link
-                        href="/labour/submit"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+                        href="/behavior-interview/submit"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
                     >
                         <Plus size={18} />
                         提交新面试题
                     </Link>
                     <Link
-                        href="/labour/manage"
+                        href="/behavior-interview/manage"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-colors font-medium"
                     >
                         管理公司
@@ -82,14 +82,14 @@ export default function LabourPage() {
                 {companies.map(company => (
                     <Link
                         key={company.id}
-                        href={`/labour/${company.id}`}
-                        className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-indigo-300 hover:shadow-lg transition-all"
+                        href={`/behavior-interview/${company.id}`}
+                        className="group bg-white border border-gray-200 rounded-2xl p-6 hover:border-blue-300 hover:shadow-lg transition-all"
                     >
                         <div className="flex items-start justify-between">
                             <div className="text-4xl mb-4">
                                 {companyIcons[company.id] || '🏢'}
                             </div>
-                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-indigo-500 transition-colors" />
+                            <ChevronRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors" />
                         </div>
                         <h3 className="font-semibold text-gray-900 text-lg mb-1">
                             {company.name}
@@ -106,7 +106,7 @@ export default function LabourPage() {
                 <div className="text-center py-16">
                     <Building2 className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-500">暂无公司数据</p>
-                    <p className="text-sm text-gray-400 mt-1">请先在数据库中执行 schema_labour.sql</p>
+                    <p className="text-sm text-gray-400 mt-1">请先在数据库中执行行为面试题库 schema</p>
                 </div>
             )}
         </div>

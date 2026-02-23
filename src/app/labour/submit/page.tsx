@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2, Check, AlertCircle } from 'lucide-react'
 import { getLabourCompanies, submitLabourQuestion, isCurrentUserAdmin } from '@/lib/labour-service'
 import type { LabourCompany } from '@/types'
 
-// Common tags for labour interviews
+// Common tags for behavior interviews
 const COMMON_TAGS = [
     '团队合作',
     '体力要求',
@@ -77,7 +77,7 @@ function SubmitFormContent() {
         if (result) {
             setSuccess(true)
             setTimeout(() => {
-                router.push(`/labour/${companyId}`)
+                router.push(`/behavior-interview/${companyId}`)
             }, 1500)
         } else {
             setError('提交失败，请检查权限或稍后重试')
@@ -95,7 +95,7 @@ function SubmitFormContent() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         )
     }
@@ -106,7 +106,7 @@ function SubmitFormContent() {
                 <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">权限不足</h2>
                 <p className="text-gray-500 mb-4">只有管理员可以提交面试题</p>
-                <Link href="/labour" className="text-indigo-600 hover:underline">
+                <Link href="/behavior-interview" className="text-blue-600 hover:underline">
                     返回公司列表
                 </Link>
             </div>
@@ -129,7 +129,7 @@ function SubmitFormContent() {
         <div className="max-w-2xl mx-auto">
             {/* Back Link */}
             <Link
-                href="/labour"
+                href="/behavior-interview"
                 className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
             >
                 <ArrowLeft size={18} />
@@ -139,7 +139,7 @@ function SubmitFormContent() {
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-900">提交面试题</h1>
-                <p className="text-gray-500 mt-1">添加新的 Labour 工作面试问题</p>
+                <p className="text-gray-500 mt-1">添加新的 BehaviorInterview 工作面试问题</p>
             </div>
 
             {/* Form */}
@@ -152,7 +152,7 @@ function SubmitFormContent() {
                     <select
                         value={companyId}
                         onChange={e => setCompanyId(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                         <option value="">选择公司...</option>
                         {companies.map(c => (
@@ -171,7 +171,7 @@ function SubmitFormContent() {
                         onChange={e => setQuestion(e.target.value)}
                         rows={4}
                         placeholder="输入面试问题，支持 Markdown 格式..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                     />
                     <p className="text-xs text-gray-400 mt-1">支持 Markdown：**粗体**、*斜体*、列表等</p>
                 </div>
@@ -186,7 +186,7 @@ function SubmitFormContent() {
                         onChange={e => setAnswer(e.target.value)}
                         rows={6}
                         placeholder="输入参考答案，支持 Markdown 格式..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 resize-none"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                     />
                 </div>
 
@@ -202,7 +202,7 @@ function SubmitFormContent() {
                                 type="button"
                                 onClick={() => toggleTag(tag)}
                                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedTags.includes(tag)
-                                        ? 'bg-indigo-600 text-white'
+                                        ? 'bg-blue-600 text-white'
                                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}
                             >
@@ -223,7 +223,7 @@ function SubmitFormContent() {
                 <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {submitting ? (
                         <>
@@ -243,7 +243,7 @@ export default function SubmitPage() {
     return (
         <Suspense fallback={
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
         }>
             <SubmitFormContent />

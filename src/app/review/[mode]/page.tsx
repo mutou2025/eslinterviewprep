@@ -6,6 +6,7 @@ import { Flashcard } from '@/components/Flashcard'
 import { FlashcardControls } from '@/components/FlashcardControls'
 import { MasteryProgress } from '@/components/MasteryBadge'
 import { useReviewStore } from '@/store/review-store'
+import { useI18n } from '@/i18n/provider'
 import { getReviewCards, getMasteryStats, getCardAnswer } from '@/lib/data-service'
 import { restoreSession, createSession, getDefaultFilters } from '@/lib/session-service'
 import type { Card, MasteryStatus } from '@/types'
@@ -17,11 +18,10 @@ interface ReviewPageProps {
 export default function ReviewPage({ params }: ReviewPageProps) {
     const searchParams = useSearchParams()
     const scope = searchParams.get('scope') || 'all'
+    const { t } = useI18n()
 
-    const [mode, setMode] = useState<string>('qa')
     const [isLoading, setIsLoading] = useState(true)
     const [answerLoadingIds, setAnswerLoadingIds] = useState<Set<string>>(new Set())
-    const [showContinuePrompt, setShowContinuePrompt] = useState(false)
     const [masteryStats, setMasteryStats] = useState<Record<MasteryStatus, number>>({
         new: 0, fuzzy: 0, 'can-explain': 0, solid: 0
     })
@@ -47,8 +47,6 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         try {
             // 解析 mode
             const resolvedParams = await params
-            setMode(resolvedParams.mode)
-
             // 获取卡片
             let cards: Card[] = []
             cards = await getReviewCards(scope, 200)
@@ -60,7 +58,6 @@ export default function ReviewPage({ params }: ReviewPageProps) {
             if (continueSession) {
                 const existingSession = await restoreSession(scope, resolvedParams.mode as 'qa' | 'code' | 'mix')
                 if (existingSession && existingSession.queueCardIds.length > 0) {
-                    setShowContinuePrompt(true)
                     setSession(existingSession)
                     setIsLoading(false)
                     return
@@ -165,8 +162,8 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full mx-auto mb-4" />
-                    <p className="text-gray-500">加载中...</p>
+                    <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
+                    <p className="text-gray-500">{t('review.loadingData')}</p>
                 </div>
             </div>
         )
@@ -180,15 +177,15 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <span className="text-3xl">🎉</span>
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">太棒了！</h2>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">{t('review.doneTitle')}</h2>
                     <p className="text-gray-500 mb-6">
-                        当前没有需要复习的卡片，你已经完成了所有学习任务！
+                        {t('review.doneDesc')}
                     </p>
                     <a
                         href="/library"
-                        className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        去题库看看
+                        {t('review.goLibrary')}
                     </a>
                 </div>
             </div>
@@ -224,7 +221,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
 
                 {/* 快捷键提示 */}
                 <div className="mt-6 text-center text-sm text-gray-400">
-                    <p>快捷键：Space 翻转 | Enter 熟练 | 1-4 标记掌握度 | ←→ 切换</p>
+                    <p>{t('review.shortcutsLine')}</p>
                 </div>
             </div>
         </div>

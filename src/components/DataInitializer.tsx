@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import { useI18n } from '@/i18n/provider'
 import { ensureCardsAvailable, initializeDefaultData } from '@/lib/data-service'
 import { getSupabaseClient } from '@/lib/supabase-client'
 
@@ -9,22 +10,22 @@ interface Props {
     children: React.ReactNode
 }
 
-function LoadingScreen() {
+function LoadingScreen({ title, subtitle }: { title: string; subtitle: string }) {
     return (
-        <div className="fixed inset-0 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <div className="fixed inset-0 bg-[#f6f8fa] flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-sm border border-[#d0d7de]">
                 <div className="text-center">
                     <div className="w-16 h-16 mx-auto mb-4 relative">
-                        <div className="absolute inset-0 border-4 border-indigo-200 rounded-full"></div>
-                        <div className="absolute inset-0 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="absolute inset-0 border-4 border-[#d8dee4] rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-[#0969da] border-t-transparent rounded-full animate-spin"></div>
                     </div>
 
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">
-                        正在初始化
+                    <h2 className="text-xl font-bold text-[#1f2328] mb-2">
+                        {title}
                     </h2>
 
-                    <p className="text-gray-600 mb-4">
-                        正在加载用户数据，请稍候...
+                    <p className="text-[#57606a] mb-4">
+                        {subtitle}
                     </p>
                 </div>
             </div>
@@ -32,28 +33,28 @@ function LoadingScreen() {
     )
 }
 
-function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void }) {
+function ErrorScreen({ title, error, onRetry, retryLabel }: { title: string; error: string; onRetry: () => void; retryLabel: string }) {
     return (
-        <div className="fixed inset-0 bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+        <div className="fixed inset-0 bg-[#f6f8fa] flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-sm border border-[#d0d7de]">
                 <div className="text-center">
                     <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
                         <span className="text-3xl">❌</span>
                     </div>
 
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">
-                        初始化失败
+                    <h2 className="text-xl font-bold text-[#1f2328] mb-2">
+                        {title}
                     </h2>
 
-                    <p className="text-gray-600 mb-4">
+                    <p className="text-[#57606a] mb-4">
                         {error}
                     </p>
 
                     <button
                         onClick={onRetry}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        className="px-6 py-2 bg-[#0969da] text-white rounded-lg hover:bg-[#0860ca] transition-colors"
                     >
-                        重试
+                        {retryLabel}
                     </button>
                 </div>
             </div>
@@ -62,6 +63,7 @@ function ErrorScreen({ error, onRetry }: { error: string; onRetry: () => void })
 }
 
 export function DataInitializer({ children }: Props) {
+    const { t } = useI18n()
     const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
     const [error, setError] = useState<string>('')
     const pathname = usePathname()
@@ -93,8 +95,8 @@ export function DataInitializer({ children }: Props) {
                 // 初始化默认数据（列表等）
                 await initializeDefaultData()
 
-                // 允许在题库为空时进入设置页以便导入
-                if (pathname.startsWith('/settings') || pathname.startsWith('/profile')) {
+                // 允许在题库为空时进入我的列表/个人中心以便导入和调整设置
+                if (pathname.startsWith('/lists') || pathname.startsWith('/profile')) {
                     if (!cancelled) setStatus('ready')
                     return
                 }
@@ -103,7 +105,7 @@ export function DataInitializer({ children }: Props) {
                 const totalCards = await ensureCardsAvailable()
                 if (totalCards === 0) {
                     if (!cancelled) {
-                        setError('题库为空，请管理员先在设置页导入题库数据。')
+                        setError('题库为空，请先在「我的列表」页导入题库数据。')
                         setStatus('error')
                     }
                     return
@@ -129,8 +131,20 @@ export function DataInitializer({ children }: Props) {
     // 使用单一 return 语句，避免条件性 early return
     return (
         <>
-            {status === 'loading' && <LoadingScreen />}
-            {status === 'error' && <ErrorScreen error={error} onRetry={() => window.location.reload()} />}
+            {status === 'loading' && (
+                <LoadingScreen
+                    title={t('initializer.initializing')}
+                    subtitle={t('initializer.loadingData')}
+                />
+            )}
+            {status === 'error' && (
+                <ErrorScreen
+                    title={t('initializer.failed')}
+                    error={error}
+                    retryLabel={t('common.retry')}
+                    onRetry={() => window.location.reload()}
+                />
+            )}
             {status === 'ready' && children}
         </>
     )

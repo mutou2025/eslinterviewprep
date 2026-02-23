@@ -35,10 +35,24 @@ export async function upsertCardSummaries(rows: CardSummary[]): Promise<void> {
     await cacheDb.cards.bulkPut(rows)
 }
 
-export async function getCachedCardSummariesByCategory(categoryL3Id?: string): Promise<CardSummary[]> {
+export async function getCachedCardSummariesByCategory(options?: {
+    categoryL3Id?: string
+    categoryL3Ids?: string[]
+}): Promise<CardSummary[]> {
+    const categoryL3Id = options?.categoryL3Id
+    const categoryL3Ids = options?.categoryL3Ids
+
     if (categoryL3Id) {
         return cacheDb.cards.where('categoryL3Id').equals(categoryL3Id).toArray()
     }
+
+    if (categoryL3Ids) {
+        if (categoryL3Ids.length === 0) return []
+        const scoped = new Set(categoryL3Ids)
+        const all = await cacheDb.cards.toArray()
+        return all.filter(card => scoped.has(card.categoryL3Id))
+    }
+
     return cacheDb.cards.toArray()
 }
 
@@ -47,12 +61,13 @@ export async function getCachedCardSummariesPage(options: {
     pageSize: number
     search?: string
     categoryL3Id?: string
+    categoryL3Ids?: string[]
 }): Promise<{ cards: CardSummary[]; total: number }> {
-    const { page, pageSize, search, categoryL3Id } = options
+    const { page, pageSize, search, categoryL3Id, categoryL3Ids } = options
     const from = (page - 1) * pageSize
     const to = from + pageSize
 
-    let cards = await getCachedCardSummariesByCategory(categoryL3Id)
+    let cards = await getCachedCardSummariesByCategory({ categoryL3Id, categoryL3Ids })
 
     if (search && search.trim()) {
         const q = search.trim().toLowerCase()

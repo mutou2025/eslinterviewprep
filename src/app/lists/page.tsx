@@ -3,22 +3,30 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Plus, PlayCircle, Trash2 } from 'lucide-react'
+import { SettingsContent } from '@/components/SettingsContent'
 import { createList as createListRemote, deleteList as deleteListRemote, getLists } from '@/lib/data-service'
+import { useI18n } from '@/i18n/provider'
 import type { CardList } from '@/types'
 
 export default function ListsPage() {
+    const { uiLanguage } = useI18n()
     const [lists, setLists] = useState<CardList[]>([])
     const [isCreating, setIsCreating] = useState(false)
     const [newListName, setNewListName] = useState('')
 
     useEffect(() => {
-        loadLists()
+        let cancelled = false
+        async function loadData() {
+            const allLists = await getLists()
+            if (!cancelled) {
+                setLists(allLists)
+            }
+        }
+        loadData()
+        return () => {
+            cancelled = true
+        }
     }, [])
-
-    async function loadLists() {
-        const allLists = await getLists()
-        setLists(allLists)
-    }
 
     const handleCreateList = useCallback(async () => {
         if (!newListName.trim()) return
@@ -32,11 +40,11 @@ export default function ListsPage() {
     }, [newListName])
 
     const handleDeleteList = useCallback(async (listId: string) => {
-        if (!confirm('确定要删除这个列表吗？')) return
+        if (!confirm(uiLanguage === 'en-US' ? 'Delete this list?' : '确定要删除这个列表吗？')) return
 
         await deleteListRemote(listId)
         setLists(prev => prev.filter(l => l.id !== listId))
-    }, [])
+    }, [uiLanguage])
 
     return (
         <div className="p-8">
@@ -49,7 +57,7 @@ export default function ListsPage() {
                     </div>
                     <button
                         onClick={() => setIsCreating(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
                         <Plus size={18} />
                         新建列表
@@ -66,12 +74,12 @@ export default function ListsPage() {
                                 value={newListName}
                                 onChange={(e) => setNewListName(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleCreateList()}
-                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 autoFocus
                             />
                             <button
                                 onClick={handleCreateList}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                             >
                                 创建
                             </button>
@@ -102,7 +110,7 @@ export default function ListsPage() {
                                     <div>
                                         <Link
                                             href={`/lists/${list.id}`}
-                                            className="font-medium text-gray-900 hover:text-indigo-600 transition-colors"
+                                            className="font-medium text-gray-900 hover:text-blue-600 transition-colors"
                                         >
                                             {list.isDefault && '⭐ '}{list.name}
                                         </Link>
@@ -113,7 +121,7 @@ export default function ListsPage() {
                                     <div className="flex items-center gap-2">
                                         <Link
                                             href={`/review/qa?scope=list:${list.id}`}
-                                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                             title="开始复习"
                                         >
                                             <PlayCircle size={20} />
@@ -133,6 +141,14 @@ export default function ListsPage() {
                         ))
                     )}
                 </div>
+
+                <section className="mt-10">
+                    <div className="mb-4">
+                        <h2 className="text-xl font-semibold text-gray-900">数据与设置</h2>
+                        <p className="text-gray-500 mt-1">设置页功能已整合到我的列表，方便集中管理</p>
+                    </div>
+                    <SettingsContent />
+                </section>
             </div>
         </div>
     )

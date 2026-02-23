@@ -72,7 +72,7 @@ export default function CategoryPage() {
     if (isLoading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <div className="animate-spin w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full" />
+                <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
             </div>
         )
     }
@@ -106,7 +106,7 @@ export default function CategoryPage() {
                         )}
                         <Link
                             href={`/review/qa?scope=category:${categoryId}`}
-                            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                         >
                             <PlayCircle size={18} />
                             复习本分类
@@ -119,10 +119,10 @@ export default function CategoryPage() {
                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
                         <button
                             onClick={toggleSelectAll}
-                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors"
+                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
                         >
                             {isAllSelected ? (
-                                <CheckSquare size={18} className="text-indigo-600" />
+                                <CheckSquare size={18} className="text-blue-600" />
                             ) : (
                                 <Square size={18} />
                             )}
@@ -148,7 +148,7 @@ export default function CategoryPage() {
                             return (
                                 <div
                                     key={card.id}
-                                    className={`bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${isSelected ? 'ring-2 ring-indigo-500 bg-indigo-50/50' : ''
+                                    className={`bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
                                         }`}
                                 >
                                     <div className="flex items-start gap-3">
@@ -158,7 +158,7 @@ export default function CategoryPage() {
                                             className="pt-1 hover:opacity-70 transition-opacity"
                                         >
                                             {isSelected ? (
-                                                <CheckSquare size={20} className="text-indigo-600" />
+                                                <CheckSquare size={20} className="text-blue-600" />
                                             ) : (
                                                 <Square size={20} className="text-gray-300 hover:text-gray-400" />
                                             )}

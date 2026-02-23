@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="ESLInterviewPrep icon">
+  <defs>
+    <linearGradient id="gShield" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="gInner" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#60A5FA" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#1D4ED8" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer shield (no harsh black stroke) -->
+  <path d="M256 56
+           C324 98 382 106 428 118
+           V264
+           C428 364 358 437 256 476
+           C154 437 84 364 84 264
+           V118
+           C130 106 188 98 256 56 Z"
+        fill="#0B1F3B"/>
+
+  <!-- Main shield -->
+  <path d="M256 74
+           C316 112 370 120 412 130
+           V262
+           C412 354 346 420 256 454
+           C166 420 100 354 100 262
+           V130
+           C142 120 196 112 256 74 Z"
+        fill="url(#gShield)"/>
+
+  <!-- Subtle facets -->
+  <path d="M120 150 C170 138 210 122 256 98 C302 122 342 138 392 150
+           C350 154 308 146 256 124 C204 146 162 154 120 150 Z"
+        fill="#93C5FD" opacity="0.55"/>
+  <path d="M132 192 L256 150 L380 192 L256 410 Z" fill="url(#gInner)" opacity="0.55"/>
+
+  <!-- Speech bubble -->
+  <path d="M166 198
+           C166 176.5 183.5 159 205 159
+           H319
+           C340.5 159 358 176.5 358 198
+           V270
+           C358 291.5 340.5 309 319 309
+           H252
+           L214 346
+           V309
+           H205
+           C183.5 309 166 291.5 166 270 Z"
+        fill="#FFFFFF"/>
+
+  <!-- Bubble tail highlight -->
+  <path d="M214 309 L214 336 L232 319 Z" fill="#E5E7EB"/>
+
+  <!-- Growth arrow -->
+  <path d="M214 264
+           L252 226
+           L276 250
+           L324 202
+           L324 230
+           L276 278
+           L252 254
+           L214 292 Z"
+        fill="#10B981"/>
+</svg>

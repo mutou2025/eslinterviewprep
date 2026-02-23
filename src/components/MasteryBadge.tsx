@@ -1,31 +1,34 @@
+'use client'
+
 import type { MasteryStatus } from '@/types'
+import { useI18n } from '@/i18n/provider'
 
 interface MasteryBadgeProps {
     mastery: MasteryStatus
     size?: 'sm' | 'md' | 'lg'
 }
 
-const masteryConfig: Record<MasteryStatus, { label: string; color: string; bg: string; icon: string }> = {
+const masteryConfig: Record<MasteryStatus, { labelKey: 'mastery.new' | 'mastery.fuzzy' | 'mastery.canExplain' | 'mastery.solid'; color: string; bg: string; icon: string }> = {
     'new': {
-        label: '未学',
+        labelKey: 'mastery.new',
         color: 'text-gray-600',
         bg: 'bg-gray-100',
         icon: '○'
     },
     'fuzzy': {
-        label: '模糊',
+        labelKey: 'mastery.fuzzy',
         color: 'text-orange-600',
         bg: 'bg-orange-100',
         icon: '◐'
     },
     'can-explain': {
-        label: '会讲',
+        labelKey: 'mastery.canExplain',
         color: 'text-blue-600',
         bg: 'bg-blue-100',
         icon: '◕'
     },
     'solid': {
-        label: '熟练',
+        labelKey: 'mastery.solid',
         color: 'text-green-600',
         bg: 'bg-green-100',
         icon: '●'
@@ -39,12 +42,13 @@ const sizeClasses = {
 }
 
 export function MasteryBadge({ mastery, size = 'md' }: MasteryBadgeProps) {
+    const { t } = useI18n()
     const config = masteryConfig[mastery]
 
     return (
         <span className={`inline-flex items-center gap-1 font-medium rounded-full ${config.bg} ${config.color} ${sizeClasses[size]}`}>
             <span>{config.icon}</span>
-            <span>{config.label}</span>
+            <span>{t(config.labelKey)}</span>
         </span>
     )
 }
@@ -55,6 +59,7 @@ interface MasteryProgressProps {
 }
 
 export function MasteryProgress({ stats, showLabels = true }: MasteryProgressProps) {
+    const { t } = useI18n()
     const total = Object.values(stats).reduce((a, b) => a + b, 0)
     if (total === 0) return null
 
@@ -86,7 +91,7 @@ export function MasteryProgress({ stats, showLabels = true }: MasteryProgressPro
                     {(Object.entries(masteryConfig) as [MasteryStatus, typeof masteryConfig[MasteryStatus]][]).map(([key, config]) => (
                         <div key={key} className="flex items-center gap-1">
                             <span className={`w-3 h-3 rounded-full ${config.bg}`} />
-                            <span className="text-gray-600">{config.label}</span>
+                            <span className="text-gray-600">{t(config.labelKey)}</span>
                             <span className="text-gray-400">({stats[key] || 0})</span>
                         </div>
                     ))}

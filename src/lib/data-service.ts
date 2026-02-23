@@ -1,6 +1,13 @@
 import type { Card, CardList, Category, MasteryStatus, UpstreamSource } from '@/types'
 import { getSupabaseClient } from './supabase-client'
-import { getCacheMeta, setCacheMeta, upsertCardSummaries, getCachedCardSummariesPage, type CardSummary } from './card-cache'
+import {
+    getCacheMeta,
+    setCacheMeta,
+    upsertCardSummaries,
+    getCachedCardSummariesByCategory,
+    getCachedCardSummariesPage,
+    type CardSummary
+} from './card-cache'
 
 type CardRow = {
     id: string
@@ -214,6 +221,7 @@ export async function getCardSummariesPage(options: {
     pageSize: number
     search?: string
     categoryL3Id?: string
+    categoryL3Ids?: string[]
 }): Promise<{ cards: Card[]; total: number }> {
     const supabase = getSupabaseClient()
     const userId = await getUserId()
@@ -232,6 +240,11 @@ export async function getCardSummariesPage(options: {
 
     if (options.categoryL3Id && options.categoryL3Id.trim()) {
         query = query.eq('category_l3_id', options.categoryL3Id.trim())
+    } else if (options.categoryL3Ids) {
+        if (options.categoryL3Ids.length === 0) {
+            return { cards: [], total: 0 }
+        }
+        query = query.in('category_l3_id', options.categoryL3Ids)
     }
 
     const { data: cardRows, error: cardsError, count } = await query
@@ -265,6 +278,7 @@ export async function getCardSummariesPageCached(options: {
     pageSize: number
     search?: string
     categoryL3Id?: string
+    categoryL3Ids?: string[]
 }): Promise<{ cards: Card[]; total: number }> {
     await syncCardSummaryCache()
     const cached = await getCachedCardSummariesPage(options)
@@ -274,6 +288,80 @@ export async function getCardSummariesPageCached(options: {
         overrides
     )
     return { cards, total: cached.total }
+}
+
+export async function getCardSolvedCountCached(options: {
+    search?: string
+    categoryL3Id?: string
+    categoryL3Ids?: string[]
+}): Promise<number> {
+    const { solved } = await getCardSolvedProgressCached(options)
+    return solved
+}
+
+export async function getSolvedCardIdsCached(): Promise<Set<string>> {
+    await syncCardSummaryCache()
+
+    const supabase = getSupabaseClient()
+    const userId = await getUserId()
+    if (!userId) return new Set()
+
+    const { data: overrideRows } = await supabase
+        .from('card_overrides')
+        .select('card_id, mastery, review_count')
+        .eq('user_id', userId)
+
+    return new Set(
+        ((overrideRows as Array<{ card_id: string; mastery: MasteryStatus | null; review_count: number | null }> | null) || [])
+            .filter(row => (row.review_count ?? 0) > 0 || (row.mastery !== null && row.mastery !== 'new'))
+            .map(row => row.card_id)
+    )
+}
+
+export async function getCardSolvedProgressCached(options: {
+    search?: string
+    categoryL3Id?: string
+    categoryL3Ids?: string[]
+}): Promise<{ solved: number; total: number }> {
+    await syncCardSummaryCache()
+
+    let cards = await getCachedCardSummariesByCategory({
+        categoryL3Id: options.categoryL3Id,
+        categoryL3Ids: options.categoryL3Ids
+    })
+
+    if (options.search && options.search.trim()) {
+        const q = options.search.trim().toLowerCase()
+        cards = cards.filter(card =>
+            card.title.toLowerCase().includes(q) ||
+            card.question.toLowerCase().includes(q)
+        )
+    }
+
+    const total = cards.length
+    if (total === 0) return { solved: 0, total: 0 }
+
+    const supabase = getSupabaseClient()
+    const userId = await getUserId()
+    if (!userId) return { solved: 0, total }
+
+    const { data: overrideRows } = await supabase
+        .from('card_overrides')
+        .select('card_id, mastery, review_count')
+        .eq('user_id', userId)
+
+    const solvedCardIds = new Set(
+        ((overrideRows as Array<{ card_id: string; mastery: MasteryStatus | null; review_count: number | null }> | null) || [])
+            .filter(row => (row.review_count ?? 0) > 0 || (row.mastery !== null && row.mastery !== 'new'))
+            .map(row => row.card_id)
+    )
+
+    let solved = 0
+    for (const card of cards) {
+        if (solvedCardIds.has(card.id)) solved += 1
+    }
+
+    return { solved, total }
 }
 
 function toCardFromCache(summary: CardSummary): Card {

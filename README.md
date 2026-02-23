@@ -12,6 +12,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
+Quick start:
+
+```bash
+cp .env.example .env.local
+# Fill .env.local with your real Supabase values
+```
+
 4. (Admin only) Generate upstream data and import:
 
 ```bash
