@@ -32,7 +32,7 @@ export function FlashcardControls({
             {onPlay && (
                 <button
                     onClick={onPlay}
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-[#94A3B8] hover:text-[#475569] hover:bg-[#F1F5F9] rounded-lg transition-colors"
                     title={isPlaying ? t('controls.pause') : t('controls.autoplay')}
                 >
                     {isPlaying ? <Pause size={20} /> : <Play size={20} />}
@@ -43,7 +43,7 @@ export function FlashcardControls({
             {onShuffle && (
                 <button
                     onClick={onShuffle}
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-[#94A3B8] hover:text-[#475569] hover:bg-[#F1F5F9] rounded-lg transition-colors"
                     title={t('controls.shuffle')}
                 >
                     <Shuffle size={20} />
@@ -53,21 +53,21 @@ export function FlashcardControls({
             {/* 上一题 */}
             <button
                 onClick={onPrevious}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-[#475569] hover:text-[#0F172A] hover:bg-[#F1F5F9] rounded-lg transition-colors disabled:opacity-50"
                 disabled={totalCount === 0}
             >
                 <ChevronLeft size={24} />
             </button>
 
             {/* 进度 */}
-            <span className="text-gray-700 font-medium min-w-[80px] text-center">
+            <span className="text-[#475569] font-medium min-w-[80px] text-center">
                 {totalCount > 0 ? `${currentIndex + 1} / ${totalCount}` : '0 / 0'}
             </span>
 
             {/* 下一题 */}
             <button
                 onClick={onNext}
-                className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-[#475569] hover:text-[#0F172A] hover:bg-[#F1F5F9] rounded-lg transition-colors disabled:opacity-50"
                 disabled={totalCount === 0}
             >
                 <ChevronRight size={24} />
@@ -77,7 +77,7 @@ export function FlashcardControls({
             {onFullscreen && (
                 <button
                     onClick={onFullscreen}
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 text-[#94A3B8] hover:text-[#475569] hover:bg-[#F1F5F9] rounded-lg transition-colors"
                     title={t('controls.fullscreen')}
                 >
                     <Maximize2 size={20} />

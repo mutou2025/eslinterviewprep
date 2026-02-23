@@ -29,7 +29,7 @@ export function LanguageSwitcher() {
         <div ref={containerRef} className="relative">
             <button
                 onClick={() => setOpen(prev => !prev)}
-                className="p-2 text-[#57606a] hover:text-[#1f2328] hover:bg-[#f6f8fa] rounded-lg transition-colors"
+                className="p-2 text-[#475569] hover:text-[#0F172A] hover:bg-[#F8FAFC] rounded-lg transition-colors"
                 title={t('language.title')}
                 aria-label={t('language.title')}
             >
@@ -37,15 +37,15 @@ export function LanguageSwitcher() {
             </button>
 
             {open && (
-                <div className="absolute bottom-11 right-0 w-60 bg-white border border-[#d0d7de] rounded-xl shadow-lg p-3 z-20 space-y-3">
+                <div className="absolute bottom-11 right-0 w-60 bg-white border border-[#CBD5E1] rounded-xl shadow-lg p-3 z-20 space-y-3">
                     <div>
-                        <p className="text-xs text-[#57606a] mb-2">{t('language.ui')}</p>
+                        <p className="text-xs text-[#475569] mb-2">{t('language.ui')}</p>
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setUiLanguage('zh-CN')}
                                 className={`px-2 py-1.5 rounded-md text-sm border transition-colors ${uiLanguage === 'zh-CN'
-                                    ? 'bg-[#ddf4ff] text-[#0969da] border-[#54aeff66]'
-                                    : 'border-[#d0d7de] text-[#57606a] hover:bg-[#f6f8fa]'
+                                    ? 'bg-[#DBEAFE] text-[#2563EB] border-[#93C5FD66]'
+                                    : 'border-[#CBD5E1] text-[#475569] hover:bg-[#F8FAFC]'
                                     }`}
                             >
                                 {t('language.zh')}
@@ -53,8 +53,8 @@ export function LanguageSwitcher() {
                             <button
                                 onClick={() => setUiLanguage('en-US')}
                                 className={`px-2 py-1.5 rounded-md text-sm border transition-colors ${uiLanguage === 'en-US'
-                                    ? 'bg-[#ddf4ff] text-[#0969da] border-[#54aeff66]'
-                                    : 'border-[#d0d7de] text-[#57606a] hover:bg-[#f6f8fa]'
+                                    ? 'bg-[#DBEAFE] text-[#2563EB] border-[#93C5FD66]'
+                                    : 'border-[#CBD5E1] text-[#475569] hover:bg-[#F8FAFC]'
                                     }`}
                             >
                                 {t('language.en')}
@@ -63,13 +63,13 @@ export function LanguageSwitcher() {
                     </div>
 
                     <div>
-                        <p className="text-xs text-[#57606a] mb-2">{t('language.content')}</p>
+                        <p className="text-xs text-[#475569] mb-2">{t('language.content')}</p>
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={() => setContentLanguage('zh-CN')}
                                 className={`px-2 py-1.5 rounded-md text-sm border transition-colors ${contentLanguage === 'zh-CN'
-                                    ? 'bg-[#ddf4ff] text-[#0969da] border-[#54aeff66]'
-                                    : 'border-[#d0d7de] text-[#57606a] hover:bg-[#f6f8fa]'
+                                    ? 'bg-[#DBEAFE] text-[#2563EB] border-[#93C5FD66]'
+                                    : 'border-[#CBD5E1] text-[#475569] hover:bg-[#F8FAFC]'
                                     }`}
                             >
                                 {t('language.zh')}
@@ -77,8 +77,8 @@ export function LanguageSwitcher() {
                             <button
                                 onClick={() => setContentLanguage('en-US')}
                                 className={`px-2 py-1.5 rounded-md text-sm border transition-colors ${contentLanguage === 'en-US'
-                                    ? 'bg-[#ddf4ff] text-[#0969da] border-[#54aeff66]'
-                                    : 'border-[#d0d7de] text-[#57606a] hover:bg-[#f6f8fa]'
+                                    ? 'bg-[#DBEAFE] text-[#2563EB] border-[#93C5FD66]'
+                                    : 'border-[#CBD5E1] text-[#475569] hover:bg-[#F8FAFC]'
                                     }`}
                             >
                                 {t('language.en')}

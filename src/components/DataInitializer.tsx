@@ -12,20 +12,19 @@ interface Props {
 
 function LoadingScreen({ title, subtitle }: { title: string; subtitle: string }) {
     return (
-        <div className="fixed inset-0 bg-[#f6f8fa] flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-sm border border-[#d0d7de]">
+        <div className="fixed inset-0 bg-[#F8FAFC] flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-sm border border-[#CBD5E1]">
                 <div className="text-center">
                     <div className="w-16 h-16 mx-auto mb-4 relative">
-                        <div className="absolute inset-0 border-4 border-[#d8dee4] rounded-full"></div>
-                        <div className="absolute inset-0 border-4 border-[#0969da] border-t-transparent rounded-full animate-spin"></div>
+                        <div className="absolute inset-0 border-4 border-[#E2E8F0] rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-[#2563EB] border-t-transparent rounded-full animate-spin"></div>
                     </div>
 
-                    <h2 className="text-xl font-bold text-[#1f2328] mb-2">
-
+                    <h2 className="text-xl font-bold text-[#0F172A] mb-2">
                         {title}
                     </h2>
 
-                    <p className="text-[#57606a] mb-4">
+                    <p className="text-[#475569] mb-4">
                         {subtitle}
                     </p>
                 </div>
@@ -36,26 +35,24 @@ function LoadingScreen({ title, subtitle }: { title: string; subtitle: string })
 
 function ErrorScreen({ title, error, onRetry, retryLabel }: { title: string; error: string; onRetry: () => void; retryLabel: string }) {
     return (
-        <div className="fixed inset-0 bg-[#f6f8fa] flex items-center justify-center z-50">
-            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-sm border border-[#d0d7de]">
+        <div className="fixed inset-0 bg-[#F8FAFC] flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 shadow-sm border border-[#CBD5E1]">
                 <div className="text-center">
                     <div className="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
                         <span className="text-3xl">❌</span>
                     </div>
 
-                    <h2 className="text-xl font-bold text-[#1f2328] mb-2">
-
-                        初始化失败
-
+                    <h2 className="text-xl font-bold text-[#0F172A] mb-2">
+                        {title}
                     </h2>
 
-                    <p className="text-[#57606a] mb-4">
+                    <p className="text-[#475569] mb-4">
                         {error}
                     </p>
 
                     <button
                         onClick={onRetry}
-                        className="px-6 py-2 bg-[#0969da] text-white rounded-lg hover:bg-[#0860ca] transition-colors"
+                        className="px-6 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                     >
                         {retryLabel}
                     </button>
@@ -98,8 +95,8 @@ export function DataInitializer({ children }: Props) {
                 // 初始化默认数据（列表等）
                 await initializeDefaultData()
 
-                // 允许在题库为空时进入我的列表/个人中心以便导入和调整设置
-                if (pathname.startsWith('/lists') || pathname.startsWith('/profile')) {
+                // 数据与管理页面始终允许进入，便于空库时执行导入
+                if (pathname.startsWith('/data-management')) {
                     if (!cancelled) setStatus('ready')
                     return
                 }
@@ -107,10 +104,8 @@ export function DataInitializer({ children }: Props) {
                 // 检查题库是否存在
                 const totalCards = await ensureCardsAvailable()
                 if (totalCards === 0) {
-                    if (!cancelled) {
-                        setError('题库为空，请先在「我的列表」页导入题库数据。')
-                        setStatus('error')
-                    }
+                    router.replace('/data-management')
+                    if (!cancelled) setStatus('loading')
                     return
                 }
 

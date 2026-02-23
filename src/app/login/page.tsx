@@ -62,17 +62,17 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-[#f6f8fa] px-4">
-            <div className="w-full max-w-md bg-white rounded-2xl border border-[#d0d7de] shadow-sm p-8">
-                <h1 className="text-2xl font-bold text-[#1f2328] mb-2">北美面试通</h1>
-                <p className="text-[#57606a] mb-6">登录后同步你的学习进度</p>
+        <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] px-4">
+            <div className="w-full max-w-md bg-white rounded-2xl border border-[#CBD5E1] shadow-sm p-8">
+                <h1 className="text-2xl font-bold text-[#0F172A] mb-2">北美面试通</h1>
+                <p className="text-[#475569] mb-6">登录后同步你的学习进度</p>
 
                 <div className="flex gap-2 mb-6">
                     <button
                         onClick={() => setMode('signin')}
                         className={`flex-1 py-2 rounded-lg text-sm font-medium ${mode === 'signin'
-                            ? 'bg-[#0969da] text-white'
-                            : 'bg-[#f6f8fa] text-[#57606a] border border-[#d0d7de]'
+                            ? 'bg-[#2563EB] text-white'
+                            : 'bg-[#F8FAFC] text-[#475569] border border-[#CBD5E1]'
                             }`}
                     >
                         登录
@@ -80,8 +80,8 @@ export default function LoginPage() {
                     <button
                         onClick={() => setMode('signup')}
                         className={`flex-1 py-2 rounded-lg text-sm font-medium ${mode === 'signup'
-                            ? 'bg-[#0969da] text-white'
-                            : 'bg-[#f6f8fa] text-[#57606a] border border-[#d0d7de]'
+                            ? 'bg-[#2563EB] text-white'
+                            : 'bg-[#F8FAFC] text-[#475569] border border-[#CBD5E1]'
                             }`}
                     >
                         注册
@@ -100,7 +100,7 @@ export default function LoginPage() {
                         placeholder="邮箱"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-4 py-2 border border-[#d0d7de] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-[#CBD5E1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                     />
                     <input
                         type="password"
@@ -108,19 +108,19 @@ export default function LoginPage() {
                         placeholder="密码（至少 6 位）"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-2 border border-[#d0d7de] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-4 py-2 border border-[#CBD5E1] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
                     />
                     <button
                         type="submit"
                         disabled={isLoading || !!configIssue}
-                        className="w-full py-2 bg-[#0969da] text-white rounded-lg hover:bg-[#0860ca] transition-colors disabled:opacity-50"
+                        className="w-full py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors disabled:opacity-50"
                     >
                         {isLoading ? '处理中...' : mode === 'signin' ? '登录' : '注册'}
                     </button>
                 </form>
 
                 {message && (
-                    <div className="mt-4 text-sm text-[#57606a] bg-[#f6f8fa] border border-[#d8dee4] p-3 rounded-lg">
+                    <div className="mt-4 text-sm text-[#475569] bg-[#F8FAFC] border border-[#E2E8F0] p-3 rounded-lg">
                         {message}
                     </div>
                 )}

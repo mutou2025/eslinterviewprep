@@ -163,7 +163,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4" />
-                    <p className="text-gray-500">{t('review.loadingData')}</p>
+                    <p className="text-[#94A3B8]">{t('review.loadingData')}</p>
                 </div>
             </div>
         )
@@ -177,14 +177,13 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                         <span className="text-3xl">🎉</span>
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">{t('review.doneTitle')}</h2>
-                    <p className="text-gray-500 mb-6">
+                    <h2 className="text-xl font-bold text-[#0F172A] mb-2">{t('review.doneTitle')}</h2>
+                    <p className="text-[#94A3B8] mb-6">
                         {t('review.doneDesc')}
                     </p>
                     <a
                         href="/library"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                        className="inline-flex items-center px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                     >
                         {t('review.goLibrary')}
                     </a>
@@ -221,7 +220,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                 />
 
                 {/* 快捷键提示 */}
-                <div className="mt-6 text-center text-sm text-gray-400">
+                <div className="mt-6 text-center text-sm text-[#94A3B8]">
                     <p>{t('review.shortcutsLine')}</p>
                 </div>
             </div>

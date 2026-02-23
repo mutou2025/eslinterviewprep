@@ -95,8 +95,7 @@ function SubmitFormContent() {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
             </div>
         )
     }
@@ -105,9 +104,9 @@ function SubmitFormContent() {
         return (
             <div className="max-w-2xl mx-auto text-center py-16">
                 <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">权限不足</h2>
-                <p className="text-gray-500 mb-4">只有管理员可以提交面试题</p>
-                <Link href="/behavior-interview" className="text-blue-600 hover:underline">
+                <h2 className="text-xl font-semibold text-[#0F172A] mb-2">权限不足</h2>
+                <p className="text-[#94A3B8] mb-4">只有管理员可以提交面试题</p>
+                <Link href="/behavior-interview" className="text-[#2563EB] hover:underline">
                     返回公司列表
                 </Link>
             </div>
@@ -118,10 +117,10 @@ function SubmitFormContent() {
         return (
             <div className="max-w-2xl mx-auto text-center py-16">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Check className="w-8 h-8 text-green-600" />
+                    <Check className="w-8 h-8 text-[#10B981]" />
                 </div>
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">提交成功！</h2>
-                <p className="text-gray-500">正在跳转...</p>
+                <h2 className="text-xl font-semibold text-[#0F172A] mb-2">提交成功！</h2>
+                <p className="text-[#94A3B8]">正在跳转...</p>
             </div>
         )
     }
@@ -131,7 +130,7 @@ function SubmitFormContent() {
             {/* Back Link */}
             <Link
                 href="/behavior-interview"
-                className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
+                className="inline-flex items-center gap-2 text-[#94A3B8] hover:text-[#475569] mb-6"
             >
                 <ArrowLeft size={18} />
                 返回公司列表
@@ -139,22 +138,21 @@ function SubmitFormContent() {
 
             {/* Header */}
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">提交面试题</h1>
-                <p className="text-gray-500 mt-1">添加新的 BehaviorInterview 工作面试问题</p>
+                <h1 className="text-2xl font-bold text-[#0F172A]">提交面试题</h1>
+                <p className="text-[#94A3B8] mt-1">添加新的 BehaviorInterview 工作面试问题</p>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Company Select */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[#475569] mb-2">
                         公司 <span className="text-red-500">*</span>
                     </label>
                     <select
                         value={companyId}
                         onChange={e => setCompanyId(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-4 py-3 border border-[#CBD5E1] rounded-xl focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB]"
                     >
                         <option value="">选择公司...</option>
                         {companies.map(c => (
@@ -165,7 +163,7 @@ function SubmitFormContent() {
 
                 {/* Question */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-[#475569] mb-2">
                         面试问题 <span className="text-red-500">*</span>
                     </label>
                     <textarea
@@ -173,31 +171,29 @@ function SubmitFormContent() {
                         onChange={e => setQuestion(e.target.value)}
                         rows={4}
                         placeholder="输入面试问题，支持 Markdown 格式..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        className="w-full px-4 py-3 border border-[#CBD5E1] rounded-xl focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB] resize-none"
                     />
-                    <p className="text-xs text-gray-400 mt-1">支持 Markdown：**粗体**、*斜体*、列表等</p>
+                    <p className="text-xs text-[#94A3B8] mt-1">支持 Markdown：**粗体**、*斜体*、列表等</p>
                 </div>
 
                 {/* Answer */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        参考答案 <span className="text-gray-400">(可选)</span>
+                    <label className="block text-sm font-medium text-[#475569] mb-2">
+                        参考答案 <span className="text-[#94A3B8]">(可选)</span>
                     </label>
                     <textarea
                         value={answer}
                         onChange={e => setAnswer(e.target.value)}
                         rows={6}
                         placeholder="输入参考答案，支持 Markdown 格式..."
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                        className="w-full px-4 py-3 border border-[#CBD5E1] rounded-xl focus:ring-2 focus:ring-[#2563EB] focus:border-[#2563EB] resize-none"
                     />
                 </div>
 
                 {/* Tags */}
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                        标签 <span className="text-gray-400">(可选)</span>
+                    <label className="block text-sm font-medium text-[#475569] mb-2">
+                        标签 <span className="text-[#94A3B8]">(可选)</span>
                     </label>
                     <div className="flex flex-wrap gap-2">
                         {COMMON_TAGS.map(tag => (
@@ -206,9 +202,8 @@ function SubmitFormContent() {
                                 type="button"
                                 onClick={() => toggleTag(tag)}
                                 className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${selectedTags.includes(tag)
-                                        ? 'bg-blue-600 text-white'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        ? 'bg-[#2563EB] text-white'
+                                        : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'
                                     }`}
                             >
                                 {tag}
@@ -228,8 +223,7 @@ function SubmitFormContent() {
                 <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    className="w-full py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full py-3 bg-[#2563EB] text-white rounded-xl font-medium hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                     {submitting ? (
                         <>
@@ -249,8 +243,7 @@ export default function SubmitPage() {
     return (
         <Suspense fallback={
             <div className="flex items-center justify-center min-h-[50vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#2563EB]" />
             </div>
         }>
             <SubmitFormContent />

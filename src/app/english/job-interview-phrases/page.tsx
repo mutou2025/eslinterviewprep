@@ -60,33 +60,33 @@ export default function JobInterviewPhrasesPage() {
         <div className="p-8">
             <div className="max-w-4xl mx-auto">
                 {/* SEO H1 */}
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                <h1 className="text-3xl font-bold text-[#0F172A] mb-4">
                     Job Interview Phrases for ESL
                 </h1>
-                <p className="text-lg text-gray-600 mb-8">
+                <p className="text-lg text-[#475569] mb-8">
                     Master essential English phrases for your North America job interviews.
-                    <span className="block text-gray-500 mt-2">
+                    <span className="block text-[#94A3B8] mt-2">
                         为 ESL 求职者准备的面试英语常用短语
                     </span>
                 </p>
 
                 {/* Tips Box */}
-                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 mb-8">
+                <div className="bg-[#EFF6FF] border border-[#93C5FD] rounded-2xl p-6 mb-8">
                     <h2 className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2">
                         <FileText className="w-5 h-5" />
                         Tips for ESL Candidates
                     </h2>
                     <ul className="space-y-2 text-blue-800">
                         <li className="flex items-start gap-2">
-                            <span className="text-blue-500">•</span>
+                            <span className="text-[#2563EB]">•</span>
                             <span>Practice speaking slowly and clearly — clarity matters more than speed</span>
                         </li>
                         <li className="flex items-start gap-2">
-                            <span className="text-blue-500">•</span>
+                            <span className="text-[#2563EB]">•</span>
                             <span>It's okay to ask "Could you repeat that?" if you didn't understand</span>
                         </li>
                         <li className="flex items-start gap-2">
-                            <span className="text-blue-500">•</span>
+                            <span className="text-[#2563EB]">•</span>
                             <span>Prepare your answers in advance and practice out loud</span>
                         </li>
                     </ul>
@@ -97,21 +97,21 @@ export default function JobInterviewPhrasesPage() {
                     {phraseSections.map(section => {
                         const Icon = section.icon
                         return (
-                            <div key={section.id} className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
+                            <div key={section.id} className="bg-white rounded-2xl p-6 shadow-sm border border-[#CBD5E1]">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                                        <Icon className="w-5 h-5 text-green-600" />
+                                        <Icon className="w-5 h-5 text-[#10B981]" />
                                     </div>
                                     <div>
-                                        <h2 className="font-semibold text-gray-900">{section.name}</h2>
-                                        <p className="text-sm text-gray-500">{section.nameZh}</p>
+                                        <h2 className="font-semibold text-[#0F172A]">{section.name}</h2>
+                                        <p className="text-sm text-[#94A3B8]">{section.nameZh}</p>
                                     </div>
                                 </div>
                                 <div className="space-y-3">
                                     {section.phrases.map((phrase, i) => (
-                                        <div key={i} className="bg-gray-50 rounded-xl p-4">
-                                            <p className="text-gray-900 font-medium">{phrase.en}</p>
-                                            <p className="text-gray-500 text-sm mt-1">{phrase.zh}</p>
+                                        <div key={i} className="bg-[#F8FAFC] rounded-xl p-4">
+                                            <p className="text-[#0F172A] font-medium">{phrase.en}</p>
+                                            <p className="text-[#94A3B8] text-sm mt-1">{phrase.zh}</p>
                                         </div>
                                     ))}
                                 </div>
@@ -121,14 +121,14 @@ export default function JobInterviewPhrasesPage() {
                 </div>
 
                 {/* CTA */}
-                <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl p-6 text-white">
+                <div className="bg-gradient-to-r from-[#10B981] to-[#059669] rounded-2xl p-6 text-white">
                     <h2 className="text-xl font-bold mb-2">Practice with Flashcards</h2>
-                    <p className="text-green-100 mb-4">
+                    <p className="text-[#D1FAE5] mb-4">
                         Use spaced repetition to memorize these phrases effectively
                     </p>
                     <Link
                         href="/review/qa"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-green-600 rounded-xl font-medium hover:bg-green-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#10B981] rounded-xl font-medium hover:bg-green-50 transition-colors"
                     >
                         Start Practice
                         <ArrowRight className="w-4 h-4" />

@@ -63,6 +63,18 @@ type CardListRow = {
     updated_at: string | null
 }
 
+type CreateUserCardInput = {
+    title: string
+    question?: string
+    answer: string
+    categoryL3Id: string
+    categoryL2Id?: string
+    questionType?: Card['questionType']
+    difficulty?: Card['difficulty']
+    frequency?: Card['frequency']
+    customTags?: string[]
+}
+
 function toCard(row: CardRow): Card {
     return {
         id: row.id,
@@ -635,10 +647,10 @@ export async function getDomainStats(): Promise<Map<string, { total: number; sol
     const cards = await getAllCardsWithOverridesInternal({ includeAnswer: false })
     const stats = new Map<string, { total: number; solid: number }>()
     cards.forEach(card => {
-        const entry = stats.get(card.categoryL3Id) || { total: 0, solid: 0 }
+        const entry = stats.get(card.categoryL2Id) || { total: 0, solid: 0 }
         entry.total++
         if (card.mastery === 'solid') entry.solid++
-        stats.set(card.categoryL3Id, entry)
+        stats.set(card.categoryL2Id, entry)
     })
     return stats
 }
@@ -851,6 +863,44 @@ export async function createList(name: string, cardIds: string[] = [], isDefault
         createdAt: row.created_at ? new Date(row.created_at) : new Date(),
         updatedAt: row.updated_at ? new Date(row.updated_at) : new Date()
     }
+}
+
+export async function createUserCard(input: CreateUserCardInput): Promise<Card | null> {
+    const supabase = getSupabaseClient()
+    const cardId = `user-${crypto.randomUUID()}`
+    const nowIso = new Date().toISOString()
+
+    const payload = {
+        id: cardId,
+        source: 'user',
+        upstream_source: null,
+        category_l1_id: 'technical',
+        category_l2_id: input.categoryL2Id || 'web-frontend',
+        category_l3_id: input.categoryL3Id,
+        title: input.title.trim(),
+        question: (input.question || input.title).trim(),
+        answer: input.answer.trim(),
+        question_type: input.questionType || 'concept',
+        difficulty: input.difficulty || 'must-know',
+        frequency: input.frequency || 'mid',
+        custom_tags: input.customTags || [],
+        origin_upstream_id: null,
+        created_at: nowIso,
+        updated_at: nowIso
+    }
+
+    const { data, error } = await supabase
+        .from('cards')
+        .insert(payload)
+        .select('id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,answer,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at')
+        .single()
+
+    if (error || !data) {
+        console.error('Failed to create user card:', error)
+        return null
+    }
+
+    return toCard(data as CardRow)
 }
 
 export async function updateList(listId: string, updates: { name?: string; cardIds?: string[] }): Promise<void> {

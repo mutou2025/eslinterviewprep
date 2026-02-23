@@ -46,12 +46,16 @@ export default function LibraryPage() {
     const searchParams = useSearchParams()
     const { t, contentLanguage } = useI18n()
 
+    const initialSearchQuery = searchParams.get('q') || ''
+    const initialCategory = searchParams.get('category') || ''
+    const initialKnowledgePoint = searchParams.get('point') || ''
+
     const [categories, setCategories] = useState<Category[]>([])
     const [cards, setCards] = useState<Card[]>([])
     const [solvedCardIds, setSolvedCardIds] = useState<Set<string>>(new Set())
-    const [searchQuery, setSearchQuery] = useState('')
-    const [selectedCategory, setSelectedCategory] = useState('')
-    const [selectedKnowledgePoint, setSelectedKnowledgePoint] = useState('')
+    const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
+    const [selectedCategory, setSelectedCategory] = useState(initialCategory)
+    const [selectedKnowledgePoint, setSelectedKnowledgePoint] = useState(initialKnowledgePoint)
     const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
     const [sortMode, setSortMode] = useState<'default' | 'id-desc'>('default')
     const [difficultyFilter, setDifficultyFilter] = useState<'all' | Card['difficulty']>('all')
@@ -203,17 +207,17 @@ export default function LibraryPage() {
     }
 
     return (
-        <div className="bg-white">
-            <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)]">
-                <aside className="bg-[#f2f4f7] p-3 lg:min-h-[calc(100vh-76px)]">
+        <div className="bg-[#F8FAFC]">
+            <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] lg:divide-x lg:divide-[#E2E8F0]">
+                <aside className="bg-[#F9FBFF] p-3 lg:min-h-[calc(100vh-76px)]">
                     <div className="px-2 pt-1 pb-2">
-                        <h2 className="text-sm font-semibold text-[#57606a]">
+                        <h2 className="text-sm font-semibold text-[#475569]">
                             {t('library.trackCategoryPanelTitle', { track: selectedTrackLabel })}
                         </h2>
                     </div>
 
                     {knowledgeCategories.length === 0 ? (
-                        <div className="px-2 py-6 text-sm text-[#6e7781]">{t('library.empty')}</div>
+                        <div className="px-2 py-6 text-sm text-[#94A3B8]">{t('library.empty')}</div>
                     ) : (
                         <div className="space-y-1">
                             {knowledgeCategories.map(category => {
@@ -237,7 +241,7 @@ export default function LibraryPage() {
                                                         return next
                                                     })
                                                 }}
-                                                className="h-8 w-8 rounded-md flex items-center justify-center text-[#57606a] hover:bg-[#f3f4f6]"
+                                                className="h-8 w-8 rounded-md flex items-center justify-center text-[#475569] hover:bg-[#F1F5F9]"
                                                 aria-label={isExpanded ? 'collapse' : 'expand'}
                                             >
                                                 {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -251,8 +255,8 @@ export default function LibraryPage() {
                                                     setExpandedCategories(prev => new Set(prev).add(category.id))
                                                 }}
                                                 className={`flex-1 rounded-lg px-2 py-1.5 text-left text-[15px] transition-colors ${isCategorySelected
-                                                    ? 'text-[#1f2328] font-semibold bg-[#f6f8fa]'
-                                                    : 'text-[#3f4955] hover:bg-[#f6f8fa]'
+                                                    ? 'text-[#0F172A] font-semibold bg-[#F8FAFC]'
+                                                    : 'text-[#475569] hover:bg-[#F8FAFC]'
                                                     }`}
                                             >
                                                 {categoryName}
@@ -269,8 +273,8 @@ export default function LibraryPage() {
                                                         setPage(1)
                                                     }}
                                                     className={`w-full rounded-md px-2 py-1.5 text-left text-sm transition-colors ${effectiveSelectedCategory === category.id && effectiveSelectedKnowledgePoint === ''
-                                                        ? 'bg-[#ddf4ff] text-[#0969da]'
-                                                        : 'text-[#57606a] hover:bg-[#f6f8fa]'
+                                                        ? 'bg-[#DBEAFE] text-[#2563EB]'
+                                                        : 'text-[#475569] hover:bg-[#F8FAFC]'
                                                         }`}
                                                 >
                                                     {t('library.allInCategory', { category: categoryName })}
@@ -291,8 +295,8 @@ export default function LibraryPage() {
                                                                 setPage(1)
                                                             }}
                                                             className={`w-full rounded-md px-2 py-1.5 text-left text-sm flex items-center justify-between gap-2 transition-colors ${isSelected
-                                                                ? 'bg-[#ddf4ff] text-[#0969da]'
-                                                                : 'text-[#57606a] hover:bg-[#f6f8fa]'
+                                                                ? 'bg-[#DBEAFE] text-[#2563EB]'
+                                                                : 'text-[#475569] hover:bg-[#F8FAFC]'
                                                                 }`}
                                                         >
                                                             <span className="truncate">{pointName}</span>
@@ -315,7 +319,7 @@ export default function LibraryPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                         <div className="flex items-center gap-1.5 flex-1 min-w-[260px]">
                             <div className="relative w-full max-w-[280px]">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6e7781]" size={14} strokeWidth={2} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" size={14} strokeWidth={2} />
                                 <input
                                     type="text"
                                     placeholder={t('library.searchPlaceholder')}
@@ -324,7 +328,7 @@ export default function LibraryPage() {
                                         setSearchQuery(e.target.value)
                                         setPage(1)
                                     }}
-                                    className="w-full h-[30px] pl-9 pr-3 text-[12px] border border-[#a7b3c0] bg-[#f1f3f5] rounded-[999px] focus:outline-none focus:ring-2 focus:ring-[#54aeff66] focus:border-[#3182f6] placeholder:text-[#6e7781]"
+                                    className="w-full h-[30px] pl-9 pr-3 text-[12px] border border-[#CBD5E1] bg-[#F1F5F9] rounded-[999px] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB] placeholder:text-[#94A3B8]"
                                 />
                             </div>
                             <button
@@ -334,8 +338,8 @@ export default function LibraryPage() {
                                     setPage(1)
                                 }}
                                 className={`h-[30px] w-[30px] rounded-full flex items-center justify-center transition-colors ${sortMode === 'default'
-                                    ? 'text-[#57606a] bg-[#f1f3f5] hover:bg-[#e7ebef]'
-                                    : 'text-[#0969da] bg-[#ddf4ff]'
+                                    ? 'text-[#475569] bg-[#F1F5F9] hover:bg-[#E2E8F0]'
+                                    : 'text-[#2563EB] bg-[#DBEAFE]'
                                     }`}
                                 title={sortMode === 'default' ? t('library.sortDefault') : t('library.sortIdDesc')}
                                 aria-label={sortMode === 'default' ? t('library.sortDefault') : t('library.sortIdDesc')}
@@ -351,8 +355,8 @@ export default function LibraryPage() {
                                     setPage(1)
                                 }}
                                 className={`relative h-[30px] w-[30px] rounded-full flex items-center justify-center transition-colors ${difficultyFilter === 'all'
-                                    ? 'text-[#57606a] bg-[#f1f3f5] hover:bg-[#e7ebef]'
-                                    : 'text-[#0969da] bg-[#ddf4ff]'
+                                    ? 'text-[#475569] bg-[#F1F5F9] hover:bg-[#E2E8F0]'
+                                    : 'text-[#2563EB] bg-[#DBEAFE]'
                                     }`}
                                 title={difficultyFilter === 'all' ? t('library.filterAllDifficulty') : `筛选：${difficultyFilter}`}
                                 aria-label={difficultyFilter === 'all' ? t('library.filterAllDifficulty') : `筛选：${difficultyFilter}`}
@@ -364,7 +368,7 @@ export default function LibraryPage() {
                             </button>
                         </div>
 
-                        <div className="shrink-0 ml-auto flex items-center gap-3 text-[#57606a]">
+                        <div className="shrink-0 ml-auto flex items-center gap-3 text-[#475569]">
                             <div className="flex items-center gap-2">
                                 <Circle size={15} />
                                 <span className="text-[16px] font-semibold">
@@ -373,7 +377,7 @@ export default function LibraryPage() {
                             </div>
                             <Link
                                 href="/review/qa"
-                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#0969da] text-white rounded-lg hover:bg-[#0860ca] transition-colors"
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                             >
                                 <PlayCircle size={15} />
                                 {t('library.startReview')}
@@ -381,7 +385,7 @@ export default function LibraryPage() {
                         </div>
                     </div>
 
-                    <div className="mb-4 px-1 text-sm text-[#6e7781]">
+                    <div className="mb-4 px-1 text-sm text-[#94A3B8]">
                         {currentKnowledgePointName
                             ? `${currentCategoryName} / ${contentLanguage === 'en-US' ? currentKnowledgePointName.nameEn : currentKnowledgePointName.name}`
                             : t('library.allInCategory', { category: currentCategoryName })}
@@ -393,8 +397,8 @@ export default function LibraryPage() {
                         </div>
                     ) : visibleCards.length === 0 ? (
                         <div className="text-center py-14">
-                            <p className="text-[#57606a]">{t('library.empty')}</p>
-                            <p className="text-sm text-[#8c959f] mt-2">{t('library.emptyHint')}</p>
+                            <p className="text-[#475569]">{t('library.empty')}</p>
+                            <p className="text-sm text-[#94A3B8] mt-2">{t('library.emptyHint')}</p>
                         </div>
                     ) : (
                         <div className="space-y-0">
@@ -403,18 +407,24 @@ export default function LibraryPage() {
                                 const serial = (currentPage - 1) * PAGE_SIZE + index + 1
                                 const focusText = extractFocusText(localized.question, localized.title)
                                 const rowBgClass = index % 2 === 0
-                                    ? 'bg-[#f6f8fa] hover:bg-[#edf3f8]'
-                                    : 'bg-transparent hover:bg-[#f8fbff]'
+                                    ? 'bg-[#F8FAFC] hover:bg-[#EFF6FF]'
+                                    : 'bg-transparent hover:bg-[#F8FAFC]'
+                                const detailParams = new URLSearchParams()
+                                detailParams.set('track', selectedTrack)
+                                if (effectiveSelectedCategory) detailParams.set('category', effectiveSelectedCategory)
+                                if (effectiveSelectedKnowledgePoint) detailParams.set('point', effectiveSelectedKnowledgePoint)
+                                if (searchQuery.trim()) detailParams.set('q', searchQuery.trim())
+                                const detailHref = `/library/cards/${card.id}${detailParams.toString() ? `?${detailParams.toString()}` : ''}`
 
                                 return (
                                     <Link
                                         key={card.id}
-                                        href={`/library/cards/${card.id}`}
+                                        href={detailHref}
                                         className={`block rounded-lg px-4 py-2 transition-colors ${rowBgClass}`}
                                     >
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="min-w-0">
-                                                <p className="text-[13px] md:text-[14px] leading-5 font-normal text-[#1f2328]">
+                                                <p className="text-[13px] md:text-[14px] leading-5 font-normal text-[#0F172A]">
                                                     <span>{serial}. </span>
                                                     <span>{focusText}</span>
                                                 </p>
@@ -436,15 +446,15 @@ export default function LibraryPage() {
                             <button
                                 onClick={() => setPage(prev => Math.max(1, Math.min(totalPages, prev) - 1))}
                                 disabled={currentPage <= 1}
-                                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-50"
+                                className="px-4 py-2 rounded-lg border border-[#E2E8F0] text-[#475569] disabled:opacity-50"
                             >
                                 {t('library.prevPage')}
                             </button>
-                            <span className="text-sm text-gray-500">{t('library.page', { page: currentPage, total: totalPages })}</span>
+                            <span className="text-sm text-[#94A3B8]">{t('library.page', { page: currentPage, total: totalPages })}</span>
                             <button
                                 onClick={() => setPage(prev => Math.min(totalPages, Math.min(totalPages, prev) + 1))}
                                 disabled={currentPage >= totalPages}
-                                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 disabled:opacity-50"
+                                className="px-4 py-2 rounded-lg border border-[#E2E8F0] text-[#475569] disabled:opacity-50"
                             >
                                 {t('library.nextPage')}
                             </button>

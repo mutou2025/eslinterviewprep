@@ -84,21 +84,21 @@ export default function CategoryPage() {
                 <div className="flex items-center gap-4 mb-6">
                     <Link
                         href="/library"
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="p-2 hover:bg-[#F1F5F9] rounded-lg transition-colors"
                     >
-                        <ArrowLeft size={20} className="text-gray-600" />
+                        <ArrowLeft size={20} className="text-[#475569]" />
                     </Link>
                     <div className="flex-1">
-                        <h1 className="text-2xl font-bold text-gray-900">
+                        <h1 className="text-2xl font-bold text-[#0F172A]">
                             {category?.name || categoryId}
                         </h1>
-                        <p className="text-gray-500">{cards.length} 道题目</p>
+                        <p className="text-[#94A3B8]">{cards.length} 道题目</p>
                     </div>
                     <div className="flex items-center gap-3">
                         {selectedCards.size > 0 && (
                             <button
                                 onClick={startStudySelected}
-                                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 bg-[#10B981] text-white rounded-lg hover:bg-[#059669] transition-colors"
                             >
                                 <PlayCircle size={18} />
                                 学习选中 ({selectedCards.size})
@@ -106,7 +106,7 @@ export default function CategoryPage() {
                         )}
                         <Link
                             href={`/review/qa?scope=category:${categoryId}`}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                         >
                             <PlayCircle size={18} />
                             复习本分类
@@ -116,20 +116,20 @@ export default function CategoryPage() {
 
                 {/* 全选按钮 */}
                 {cards.length > 0 && (
-                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-200">
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#E2E8F0]">
                         <button
                             onClick={toggleSelectAll}
-                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                            className="flex items-center gap-2 text-sm text-[#475569] hover:text-[#2563EB] transition-colors"
                         >
                             {isAllSelected ? (
-                                <CheckSquare size={18} className="text-blue-600" />
+                                <CheckSquare size={18} className="text-[#2563EB]" />
                             ) : (
                                 <Square size={18} />
                             )}
                             {isAllSelected ? '取消全选' : '全选'}
                         </button>
                         {selectedCards.size > 0 && (
-                            <span className="text-sm text-gray-500">
+                            <span className="text-sm text-[#94A3B8]">
                                 已选择 {selectedCards.size} 题
                             </span>
                         )}
@@ -138,7 +138,7 @@ export default function CategoryPage() {
 
                 {/* 题目列表 */}
                 {cards.length === 0 ? (
-                    <div className="text-center py-12 text-gray-500">
+                    <div className="text-center py-12 text-[#94A3B8]">
                         <p>该分类暂无题目</p>
                     </div>
                 ) : (
@@ -148,7 +148,7 @@ export default function CategoryPage() {
                             return (
                                 <div
                                     key={card.id}
-                                    className={`bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${isSelected ? 'ring-2 ring-blue-500 bg-blue-50/50' : ''
+                                    className={`bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-all ${isSelected ? 'ring-2 ring-blue-500 bg-[#EFF6FF]/50' : ''
                                         }`}
                                 >
                                     <div className="flex items-start gap-3">
@@ -158,9 +158,9 @@ export default function CategoryPage() {
                                             className="pt-1 hover:opacity-70 transition-opacity"
                                         >
                                             {isSelected ? (
-                                                <CheckSquare size={20} className="text-blue-600" />
+                                                <CheckSquare size={20} className="text-[#2563EB]" />
                                             ) : (
-                                                <Square size={20} className="text-gray-300 hover:text-gray-400" />
+                                                <Square size={20} className="text-gray-300 hover:text-[#94A3B8]" />
                                             )}
                                         </button>
 
@@ -169,10 +169,10 @@ export default function CategoryPage() {
                                             href={`/library/cards/${card.id}`}
                                             className="flex-1 cursor-pointer hover:opacity-80 transition-opacity"
                                         >
-                                            <p className="font-medium text-gray-900 mb-1">
+                                            <p className="font-medium text-[#0F172A] mb-1">
                                                 {card.title}
                                             </p>
-                                            <p className="text-gray-500 text-sm">点击查看详情</p>
+                                            <p className="text-[#94A3B8] text-sm">点击查看详情</p>
                                         </Link>
 
                                         {/* 掌握度 */}

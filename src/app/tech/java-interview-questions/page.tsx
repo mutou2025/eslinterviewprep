@@ -48,12 +48,12 @@ export default function JavaInterviewQuestionsPage() {
         <div className="p-8">
             <div className="max-w-4xl mx-auto">
                 {/* SEO H1 */}
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                <h1 className="text-3xl font-bold text-[#0F172A] mb-4">
                     Java Interview Questions
                 </h1>
-                <p className="text-lg text-gray-600 mb-8">
+                <p className="text-lg text-[#475569] mb-8">
                     Prepare for Java backend developer interviews at top North American companies.
-                    <span className="block text-gray-500 mt-2">
+                    <span className="block text-[#94A3B8] mt-2">
                         为北美求职准备的 Java 后端面试题库
                     </span>
                 </p>
@@ -66,20 +66,20 @@ export default function JavaInterviewQuestionsPage() {
                             <Link
                                 key={topic.id}
                                 href={`/library/categories/${topic.id}`}
-                                className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de] hover:shadow-md transition-all group"
+                                className="bg-white rounded-2xl p-6 shadow-sm border border-[#CBD5E1] hover:shadow-md transition-all group"
                             >
                                 <div className="flex items-start gap-4">
                                     <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center group-hover:bg-orange-200 transition-colors">
-                                        <Icon className="w-6 h-6 text-blue-700" />
+                                        <Icon className="w-6 h-6 text-[#1D4ED8]" />
                                     </div>
                                     <div className="flex-1">
-                                        <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                                        <h2 className="text-lg font-semibold text-[#0F172A] flex items-center gap-2">
                                             {topic.name}
                                             <ArrowRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" />
                                         </h2>
-                                        <p className="text-sm text-gray-500 mt-1">{topic.nameZh}</p>
-                                        <p className="text-sm text-gray-600 mt-2">{topic.description}</p>
-                                        <p className="text-xs text-blue-700 mt-2">{topic.count}+ questions</p>
+                                        <p className="text-sm text-[#94A3B8] mt-1">{topic.nameZh}</p>
+                                        <p className="text-sm text-[#475569] mt-2">{topic.description}</p>
+                                        <p className="text-xs text-[#1D4ED8] mt-2">{topic.count}+ questions</p>
                                     </div>
                                 </div>
                             </Link>
@@ -88,14 +88,14 @@ export default function JavaInterviewQuestionsPage() {
                 </div>
 
                 {/* CTA */}
-                <div className="bg-gradient-to-r from-slate-900 to-blue-700 rounded-2xl p-6 text-white">
+                <div className="bg-gradient-to-r from-[#0B1F3B] to-[#2563EB] rounded-2xl p-6 text-white">
                     <h2 className="text-xl font-bold mb-2">Start Practicing Now</h2>
                     <p className="text-orange-100 mb-4">
                         Use spaced repetition flashcards to master Java concepts efficiently
                     </p>
                     <Link
                         href="/review/qa"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-xl font-medium hover:bg-slate-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1D4ED8] rounded-xl font-medium hover:bg-slate-50 transition-colors"
                     >
                         Start Review
                         <ArrowRight className="w-4 h-4" />
