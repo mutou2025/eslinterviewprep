@@ -40,13 +40,14 @@ export async function GET(request: NextRequest) {
 
         const { searchParams } = new URL(request.url)
         const cardId = searchParams.get('cardId')?.trim()
+        const language = searchParams.get('language') === 'en-US' ? 'en-US' : 'zh-CN'
         if (!cardId) {
             return NextResponse.json({ success: false, error: '缺少 cardId' }, { status: 400 })
         }
 
         const { data, error } = await supabase
             .from('cards')
-            .select('answer')
+            .select('answer,answer_zh,answer_en')
             .eq('id', cardId)
             .maybeSingle()
 
@@ -57,7 +58,10 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(
             {
                 success: true,
-                answer: (data as { answer: string | null } | null)?.answer ?? null
+                answer: (data as { answer: string | null } | null)?.answer ?? null,
+                answerZh: (data as { answer_zh: string | null } | null)?.answer_zh ?? null,
+                answerEn: (data as { answer_en: string | null } | null)?.answer_en ?? null,
+                language
             },
             {
                 headers: {

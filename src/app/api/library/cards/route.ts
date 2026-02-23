@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
         let query = supabase
             .from('cards')
             .select(
-                'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at',
+                'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,title_zh,title_en,question,question_zh,question_en,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at',
                 { count: 'exact' }
             )
 
