@@ -299,6 +299,25 @@ export async function getCardSolvedCountCached(options: {
     return solved
 }
 
+export async function getSolvedCardIdsCached(): Promise<Set<string>> {
+    await syncCardSummaryCache()
+
+    const supabase = getSupabaseClient()
+    const userId = await getUserId()
+    if (!userId) return new Set()
+
+    const { data: overrideRows } = await supabase
+        .from('card_overrides')
+        .select('card_id, mastery, review_count')
+        .eq('user_id', userId)
+
+    return new Set(
+        ((overrideRows as Array<{ card_id: string; mastery: MasteryStatus | null; review_count: number | null }> | null) || [])
+            .filter(row => (row.review_count ?? 0) > 0 || (row.mastery !== null && row.mastery !== 'new'))
+            .map(row => row.card_id)
+    )
+}
+
 export async function getCardSolvedProgressCached(options: {
     search?: string
     categoryL3Id?: string
