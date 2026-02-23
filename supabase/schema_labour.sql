@@ -37,19 +37,21 @@ alter table public.labour_questions add column if not exists updated_at timestam
 alter table public.labour_companies enable row level security;
 alter table public.labour_questions enable row level security;
 
--- Labour Companies policies: public read, admin write
+-- Labour Companies policies: authenticated read, admin write
 drop policy if exists "Labour Companies: public read" on public.labour_companies;
-create policy "Labour Companies: public read" on public.labour_companies
-for select using (true);
+drop policy if exists "Labour Companies: authenticated read" on public.labour_companies;
+create policy "Labour Companies: authenticated read" on public.labour_companies
+for select using (auth.role() = 'authenticated');
 
 drop policy if exists "Labour Companies: admin write" on public.labour_companies;
 create policy "Labour Companies: admin write" on public.labour_companies
 for all using (public.is_admin()) with check (public.is_admin());
 
--- Labour Questions policies: public read, admin write
+-- Labour Questions policies: authenticated read, admin write
 drop policy if exists "Labour Questions: public read" on public.labour_questions;
-create policy "Labour Questions: public read" on public.labour_questions
-for select using (true);
+drop policy if exists "Labour Questions: authenticated read" on public.labour_questions;
+create policy "Labour Questions: authenticated read" on public.labour_questions
+for select using (auth.role() = 'authenticated');
 
 drop policy if exists "Labour Questions: admin write" on public.labour_questions;
 create policy "Labour Questions: admin write" on public.labour_questions

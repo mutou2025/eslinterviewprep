@@ -235,8 +235,9 @@ for insert with check (auth.uid() = id);
 
 -- Categories policies
 drop policy if exists "Categories: public read" on public.categories;
-create policy "Categories: public read" on public.categories
-for select using (true);
+drop policy if exists "Categories: authenticated read" on public.categories;
+create policy "Categories: authenticated read" on public.categories
+for select using (auth.role() = 'authenticated');
 
 drop policy if exists "Categories: admin write" on public.categories;
 create policy "Categories: admin write" on public.categories
@@ -244,8 +245,9 @@ for all using (public.is_admin()) with check (public.is_admin());
 
 -- Cards policies
 drop policy if exists "Cards: public read" on public.cards;
-create policy "Cards: public read" on public.cards
-for select using (true);
+drop policy if exists "Cards: authenticated read" on public.cards;
+create policy "Cards: authenticated read" on public.cards
+for select using (auth.role() = 'authenticated');
 
 drop policy if exists "Cards: admin write" on public.cards;
 create policy "Cards: admin write" on public.cards

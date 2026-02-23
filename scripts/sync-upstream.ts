@@ -142,7 +142,7 @@ async function syncFebobo(): Promise<RawCard[]> {
                     // 解析标题和内容
                     const lines = content.split('\n')
                     let question = ''
-                    let answer = content
+                    const answer = content
 
                     // 查找第一个标题作为问题
                     for (const line of lines) {
@@ -307,29 +307,22 @@ async function main() {
     const uniqueCategories = Array.from(new Map(result.categories.map(cat => [cat.id, cat])).values())
     result.categories = uniqueCategories
 
-    // 保存结果
+    // 保存结果（仅写入私有 data 目录，避免公开全量题库）
     const outputDir = path.join(__dirname, '..', 'data')
-    const publicDir = path.join(__dirname, '..', 'public', 'data')
 
     if (!fs.existsSync(outputDir)) {
         fs.mkdirSync(outputDir, { recursive: true })
     }
-    if (!fs.existsSync(publicDir)) {
-        fs.mkdirSync(publicDir, { recursive: true })
-    }
 
     const outputPath = path.join(outputDir, 'upstream.json')
-    const publicPath = path.join(publicDir, 'upstream.json')
     const content = JSON.stringify(result, null, 2)
 
     fs.writeFileSync(outputPath, content)
-    fs.writeFileSync(publicPath, content)
 
     console.log(`\n✅ Sync complete!`)
     console.log(`   Total cards: ${allCards.length}`)
     console.log(`   Categories: ${categories.length}`)
     console.log(`   Output: ${outputPath}`)
-    console.log(`   Public: ${publicPath}`)
 }
 
 main().catch(console.error)

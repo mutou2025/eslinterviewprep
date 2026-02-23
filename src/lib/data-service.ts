@@ -5,7 +5,6 @@ import {
     setCacheMeta,
     upsertCardSummaries,
     getCachedCardSummariesByCategory,
-    getCachedCardSummariesPage,
     type CardSummary
 } from './card-cache'
 
@@ -75,6 +74,19 @@ type CreateUserCardInput = {
     customTags?: string[]
 }
 
+type CardPageApiResponse = {
+    success: boolean
+    cards?: CardRow[]
+    total?: number
+    error?: string
+}
+
+type CardAnswerApiResponse = {
+    success: boolean
+    answer?: string | null
+    error?: string
+}
+
 function toCard(row: CardRow): Card {
     return {
         id: row.id,
@@ -133,6 +145,13 @@ async function getUserId(): Promise<string | null> {
     const { data, error } = await supabase.auth.getUser()
     if (error || !data.user) return null
     return data.user.id
+}
+
+async function getAccessToken(): Promise<string | null> {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase.auth.getSession()
+    if (error) return null
+    return data.session?.access_token ?? null
 }
 
 export async function initializeDefaultData(): Promise<void> {
@@ -235,44 +254,52 @@ export async function getCardSummariesPage(options: {
     categoryL3Id?: string
     categoryL3Ids?: string[]
 }): Promise<{ cards: Card[]; total: number }> {
-    const supabase = getSupabaseClient()
-    const userId = await getUserId()
-
-    const from = (options.page - 1) * options.pageSize
-    const to = from + options.pageSize - 1
-
-    const selectColumns = 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
-
-    let query = supabase.from('cards').select(selectColumns, { count: 'exact' })
-
-    if (options.search && options.search.trim()) {
-        const q = options.search.trim()
-        query = query.or(`title.ilike.%${q}%,question.ilike.%${q}%`)
-    }
-
-    if (options.categoryL3Id && options.categoryL3Id.trim()) {
-        query = query.eq('category_l3_id', options.categoryL3Id.trim())
-    } else if (options.categoryL3Ids) {
-        if (options.categoryL3Ids.length === 0) {
-            return { cards: [], total: 0 }
-        }
-        query = query.in('category_l3_id', options.categoryL3Ids)
-    }
-
-    const { data: cardRows, error: cardsError, count } = await query
-        .order('id')
-        .range(from, to)
-
-    if (cardsError || !cardRows) {
-        console.error('Failed to load cards:', cardsError)
+    if (!options.categoryL3Id && options.categoryL3Ids && options.categoryL3Ids.length === 0) {
         return { cards: [], total: 0 }
     }
 
-    const cards = (cardRows as CardRow[]).map(toCard)
+    const token = await getAccessToken()
+    if (!token) return { cards: [], total: 0 }
+
+    const userId = await getUserId()
+    const params = new URLSearchParams()
+    params.set('page', String(options.page))
+    params.set('pageSize', String(options.pageSize))
+    if (options.search && options.search.trim()) {
+        params.set('search', options.search.trim())
+    }
+    if (options.categoryL3Id && options.categoryL3Id.trim()) {
+        params.set('categoryL3Id', options.categoryL3Id.trim())
+    }
+    if (options.categoryL3Ids && options.categoryL3Ids.length > 0) {
+        params.set('categoryL3Ids', options.categoryL3Ids.join(','))
+    }
+
+    const response = await fetch(`/api/library/cards?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+
+    if (!response.ok) {
+        const text = await response.text()
+        console.error('Failed to load cards from API:', response.status, text)
+        return { cards: [], total: 0 }
+    }
+
+    const payload = await response.json() as CardPageApiResponse
+    if (!payload.success || !payload.cards) {
+        console.error('Failed to load cards from API:', payload.error)
+        return { cards: [], total: 0 }
+    }
+
+    const cards = payload.cards.map(toCard)
 
     if (!userId || cards.length === 0) {
-        return { cards, total: count || cards.length }
+        return { cards, total: payload.total || cards.length }
     }
+
+    const supabase = getSupabaseClient()
 
     const cardIds = cards.map(c => c.id)
     const { data: overrideRows } = await supabase
@@ -282,7 +309,7 @@ export async function getCardSummariesPage(options: {
         .in('card_id', cardIds)
 
     const overrideMap = new Map((overrideRows as OverrideRow[] | null || []).map(row => [row.card_id, row]))
-    return { cards: cards.map(card => applyOverride(card, overrideMap.get(card.id))), total: count || cards.length }
+    return { cards: cards.map(card => applyOverride(card, overrideMap.get(card.id))), total: payload.total || cards.length }
 }
 
 export async function getCardSummariesPageCached(options: {
@@ -292,14 +319,7 @@ export async function getCardSummariesPageCached(options: {
     categoryL3Id?: string
     categoryL3Ids?: string[]
 }): Promise<{ cards: Card[]; total: number }> {
-    await syncCardSummaryCache()
-    const cached = await getCachedCardSummariesPage(options)
-    const overrides = await getOverridesByIds(cached.cards.map(card => card.id))
-    const cards = applyOverridesToCards(
-        cached.cards.map(toCardFromCache),
-        overrides
-    )
-    return { cards, total: cached.total }
+    return getCardSummariesPage(options)
 }
 
 export async function getCardSolvedCountCached(options: {
@@ -312,8 +332,6 @@ export async function getCardSolvedCountCached(options: {
 }
 
 export async function getSolvedCardIdsCached(): Promise<Set<string>> {
-    await syncCardSummaryCache()
-
     const supabase = getSupabaseClient()
     const userId = await getUserId()
     if (!userId) return new Set()
@@ -376,38 +394,6 @@ export async function getCardSolvedProgressCached(options: {
     return { solved, total }
 }
 
-function toCardFromCache(summary: CardSummary): Card {
-    return {
-        id: summary.id,
-        source: summary.source as Card['source'],
-        upstreamSource: summary.upstreamSource || undefined,
-        categoryL1Id: summary.categoryL1Id,
-        categoryL2Id: summary.categoryL2Id,
-        categoryL3Id: summary.categoryL3Id,
-        title: summary.title,
-        question: summary.question,
-        answer: undefined,
-        questionType: summary.questionType as Card['questionType'],
-        difficulty: summary.difficulty as Card['difficulty'],
-        frequency: summary.frequency as Card['frequency'],
-        customTags: summary.customTags || [],
-        codeTemplate: undefined,
-        testCases: undefined,
-        entryFunctionName: undefined,
-        supportedLanguages: undefined,
-        mastery: 'new',
-        reviewCount: 0,
-        intervalDays: 0,
-        dueAt: new Date(),
-        lastReviewedAt: undefined,
-        lastSubmissionCode: undefined,
-        passRate: undefined,
-        originUpstreamId: summary.originUpstreamId || undefined,
-        createdAt: summary.createdAt instanceof Date ? summary.createdAt : new Date(summary.createdAt),
-        updatedAt: summary.updatedAt instanceof Date ? summary.updatedAt : new Date(summary.updatedAt)
-    }
-}
-
 export async function getCardWithOverride(cardId: string): Promise<Card | undefined> {
     const supabase = getSupabaseClient()
     const userId = await getUserId()
@@ -461,15 +447,31 @@ export async function getCardSummary(cardId: string): Promise<Card | undefined> 
 }
 
 export async function getCardAnswer(cardId: string): Promise<string | null> {
-    const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-        .from('cards')
-        .select('answer')
-        .eq('id', cardId)
-        .maybeSingle()
+    const token = await getAccessToken()
+    if (!token) return null
 
-    if (error || !data) return null
-    return (data as { answer: string | null }).answer
+    const params = new URLSearchParams()
+    params.set('cardId', cardId)
+
+    const response = await fetch(`/api/library/answer?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+
+    if (!response.ok) {
+        const text = await response.text()
+        console.error('Failed to load card answer from API:', response.status, text)
+        return null
+    }
+
+    const payload = await response.json() as CardAnswerApiResponse
+    if (!payload.success) {
+        console.error('Failed to load card answer from API:', payload.error)
+        return null
+    }
+
+    return payload.answer ?? null
 }
 
 export async function getOverridesByIds(cardIds: string[]): Promise<OverrideRow[]> {

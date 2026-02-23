@@ -65,15 +65,9 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: false, error: '需要管理员权限' }, { status: 403 })
         }
 
-        const publicPath = path.join(process.cwd(), 'public', 'data', 'upstream.json')
         const dataPath = path.join(process.cwd(), 'data', 'upstream.json')
 
-        let raw: string
-        try {
-            raw = await fs.readFile(publicPath, 'utf8')
-        } catch {
-            raw = await fs.readFile(dataPath, 'utf8')
-        }
+        const raw = await fs.readFile(dataPath, 'utf8')
         const payload = JSON.parse(raw) as { categories: UpstreamCategory[]; cards: UpstreamCard[] }
 
         const categories = payload.categories.map(cat => ({
