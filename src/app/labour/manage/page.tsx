@@ -43,24 +43,26 @@ export default function ManageCompaniesPage() {
     const [deletingId, setDeletingId] = useState<string | null>(null)
 
     useEffect(() => {
+        let cancelled = false
+
+        async function loadData() {
+            const [companiesData, adminStatus] = await Promise.all([
+                getLabourCompanies(),
+                isCurrentUserAdmin(),
+            ])
+
+            if (cancelled) return
+            setCompanies(companiesData)
+            setIsAdmin(adminStatus)
+            setLoading(false)
+        }
+
         loadData()
+
+        return () => {
+            cancelled = true
+        }
     }, [])
-
-    async function loadData() {
-        const [companiesData, adminStatus] = await Promise.all([
-            getLabourCompanies(),
-            isCurrentUserAdmin(),
-        ])
-        setCompanies(companiesData)
-        setIsAdmin(adminStatus)
-        setLoading(false)
-    }
-
-    // Auto-generate ID from name
-    useEffect(() => {
-        if (newCompanyName && !showAddForm) return
-        setNewCompanyId(generateSlug(newCompanyName))
-    }, [newCompanyName, showAddForm])
 
     async function handleAddCompany(e: React.FormEvent) {
         e.preventDefault()
@@ -147,7 +149,7 @@ export default function ManageCompaniesPage() {
                 <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">权限不足</h2>
                 <p className="text-gray-500 mb-4">只有管理员可以管理公司列表</p>
-                <Link href="/labour" className="text-blue-600 hover:underline">
+                <Link href="/behavior-interview" className="text-blue-600 hover:underline">
                     返回公司列表
                 </Link>
             </div>
@@ -158,7 +160,7 @@ export default function ManageCompaniesPage() {
         <div className="max-w-3xl mx-auto">
             {/* Back Link */}
             <Link
-                href="/labour"
+                href="/behavior-interview"
                 className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
             >
                 <ArrowLeft size={18} />
@@ -169,7 +171,7 @@ export default function ManageCompaniesPage() {
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900">管理公司</h1>
-                    <p className="text-gray-500 mt-1">添加、编辑或删除 Labour 面试公司</p>
+                    <p className="text-gray-500 mt-1">添加、编辑或删除 BehaviorInterview 面试公司</p>
                 </div>
                 {!showAddForm && (
                     <button
@@ -193,7 +195,11 @@ export default function ManageCompaniesPage() {
                             <input
                                 type="text"
                                 value={newCompanyName}
-                                onChange={e => setNewCompanyName(e.target.value)}
+                                onChange={e => {
+                                    const value = e.target.value
+                                    setNewCompanyName(value)
+                                    setNewCompanyId(generateSlug(value))
+                                }}
                                 placeholder="如：Amazon"
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                             />
@@ -314,7 +320,7 @@ export default function ManageCompaniesPage() {
 
                 {companies.length === 0 && (
                     <div className="p-8 text-center text-gray-500">
-                        暂无公司，点击"新增公司"添加
+                        暂无公司，点击“新增公司”添加
                     </div>
                 )}
             </div>

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { Plus, PlayCircle, Trash2 } from 'lucide-react'
+import { SettingsContent } from '@/components/SettingsContent'
 import { createList as createListRemote, deleteList as deleteListRemote, getLists } from '@/lib/data-service'
 import { useI18n } from '@/i18n/provider'
 import type { CardList } from '@/types'
@@ -140,6 +141,14 @@ export default function ListsPage() {
                         ))
                     )}
                 </div>
+
+                <section className="mt-10">
+                    <div className="mb-4">
+                        <h2 className="text-xl font-semibold text-gray-900">数据与设置</h2>
+                        <p className="text-gray-500 mt-1">设置页功能已整合到我的列表，方便集中管理</p>
+                    </div>
+                    <SettingsContent />
+                </section>
             </div>
         </div>
     )

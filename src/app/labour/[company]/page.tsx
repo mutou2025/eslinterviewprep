@@ -97,7 +97,7 @@ export default function CompanyQuestionsPage() {
         return (
             <div className="text-center py-16">
                 <p className="text-gray-500">公司不存在</p>
-                <Link href="/labour" className="text-blue-600 hover:underline mt-2 inline-block">
+                <Link href="/behavior-interview" className="text-blue-600 hover:underline mt-2 inline-block">
                     返回公司列表
                 </Link>
             </div>
@@ -108,7 +108,7 @@ export default function CompanyQuestionsPage() {
         <div className="max-w-4xl mx-auto">
             {/* Back Link */}
             <Link
-                href="/labour"
+                href="/behavior-interview"
                 className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
             >
                 <ArrowLeft size={18} />
@@ -130,7 +130,7 @@ export default function CompanyQuestionsPage() {
             {isAdmin && (
                 <div className="mb-6">
                     <Link
-                        href={`/labour/submit?company=${companyId}`}
+                        href={`/behavior-interview/submit?company=${companyId}`}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium"
                     >
                         <Plus size={18} />
@@ -153,7 +153,7 @@ export default function CompanyQuestionsPage() {
                     <p className="text-gray-500">暂无面试题</p>
                     {isAdmin && (
                         <Link
-                            href={`/labour/submit?company=${companyId}`}
+                            href={`/behavior-interview/submit?company=${companyId}`}
                             className="text-blue-600 hover:underline mt-2 inline-block"
                         >
                             添加第一道题目

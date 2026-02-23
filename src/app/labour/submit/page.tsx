@@ -7,7 +7,7 @@ import { ArrowLeft, Loader2, Check, AlertCircle } from 'lucide-react'
 import { getLabourCompanies, submitLabourQuestion, isCurrentUserAdmin } from '@/lib/labour-service'
 import type { LabourCompany } from '@/types'
 
-// Common tags for labour interviews
+// Common tags for behavior interviews
 const COMMON_TAGS = [
     '团队合作',
     '体力要求',
@@ -77,7 +77,7 @@ function SubmitFormContent() {
         if (result) {
             setSuccess(true)
             setTimeout(() => {
-                router.push(`/labour/${companyId}`)
+                router.push(`/behavior-interview/${companyId}`)
             }, 1500)
         } else {
             setError('提交失败，请检查权限或稍后重试')
@@ -106,7 +106,7 @@ function SubmitFormContent() {
                 <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">权限不足</h2>
                 <p className="text-gray-500 mb-4">只有管理员可以提交面试题</p>
-                <Link href="/labour" className="text-blue-600 hover:underline">
+                <Link href="/behavior-interview" className="text-blue-600 hover:underline">
                     返回公司列表
                 </Link>
             </div>
@@ -129,7 +129,7 @@ function SubmitFormContent() {
         <div className="max-w-2xl mx-auto">
             {/* Back Link */}
             <Link
-                href="/labour"
+                href="/behavior-interview"
                 className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-6"
             >
                 <ArrowLeft size={18} />
@@ -139,7 +139,7 @@ function SubmitFormContent() {
             {/* Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-gray-900">提交面试题</h1>
-                <p className="text-gray-500 mt-1">添加新的 Labour 工作面试问题</p>
+                <p className="text-gray-500 mt-1">添加新的 BehaviorInterview 工作面试问题</p>
             </div>
 
             {/* Form */}

@@ -95,8 +95,8 @@ export function DataInitializer({ children }: Props) {
                 // 初始化默认数据（列表等）
                 await initializeDefaultData()
 
-                // 允许在题库为空时进入设置页以便导入
-                if (pathname.startsWith('/settings') || pathname.startsWith('/profile')) {
+                // 允许在题库为空时进入我的列表/个人中心以便导入和调整设置
+                if (pathname.startsWith('/lists') || pathname.startsWith('/profile')) {
                     if (!cancelled) setStatus('ready')
                     return
                 }
@@ -105,7 +105,7 @@ export function DataInitializer({ children }: Props) {
                 const totalCards = await ensureCardsAvailable()
                 if (totalCards === 0) {
                     if (!cancelled) {
-                        setError('题库为空，请管理员先在设置页导入题库数据。')
+                        setError('题库为空，请先在「我的列表」页导入题库数据。')
                         setStatus('error')
                     }
                     return
