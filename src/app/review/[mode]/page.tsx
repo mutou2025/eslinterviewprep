@@ -1,12 +1,11 @@
 'use client'
 
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Flashcard } from '@/components/Flashcard'
 import { FlashcardControls } from '@/components/FlashcardControls'
 import { MasteryProgress } from '@/components/MasteryBadge'
 import { useReviewStore } from '@/store/review-store'
-import { getLocalizedCategoryName } from '@/i18n/content'
 import { useI18n } from '@/i18n/provider'
 import { buildTechnicalKnowledgeCategories } from '@/lib/technical-taxonomy'
 import { getReviewCards, getMasteryStats, getCardAnswer, getCategories, getDefaultList, getDueCount } from '@/lib/data-service'
@@ -17,6 +16,17 @@ type ReviewMode = 'qa' | 'code' | 'mix'
 
 interface ReviewPageProps {
     params: Promise<{ mode: string }>
+}
+
+const BEHAVIORAL_INTERVIEW_SCOPE = 'link:behavior-interview'
+
+function extractDomainIdFromScope(scope: string): string {
+    if (scope.startsWith('category:')) {
+        return scope.replace('category:', '')
+    }
+
+    const pointMatch = /^point:([^:]+):/.exec(scope)
+    return pointMatch ? pointMatch[1] : ''
 }
 
 export default function ReviewPage({ params }: ReviewPageProps) {
@@ -35,10 +45,13 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     const [scopeOptionsLoading, setScopeOptionsLoading] = useState(false)
     const [scopeCategories, setScopeCategories] = useState<Category[]>([])
     const [favoriteList, setFavoriteList] = useState<CardList | null>(null)
+    const [isScopePanelOpen, setIsScopePanelOpen] = useState(false)
+    const [draftScope, setDraftScope] = useState(activeScope)
     const [dueCount, setDueCount] = useState(0)
     const [masteryStats, setMasteryStats] = useState<Record<MasteryStatus, number>>({
         new: 0, fuzzy: 0, 'can-explain': 0, solid: 0
     })
+    const scopePanelRef = useRef<HTMLDivElement | null>(null)
 
     const {
         session,
@@ -81,7 +94,24 @@ export default function ReviewPage({ params }: ReviewPageProps) {
 
     useEffect(() => {
         setSelectedScope(activeScope)
+        setDraftScope(activeScope)
+        setIsScopePanelOpen(false)
     }, [activeScope])
+
+    useEffect(() => {
+        if (!isScopePanelOpen) return
+
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node
+            if (!scopePanelRef.current?.contains(target)) {
+                setDraftScope(selectedScope)
+                setIsScopePanelOpen(false)
+            }
+        }
+
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [isScopePanelOpen, selectedScope])
 
     useEffect(() => {
         let cancelled = false
@@ -110,6 +140,10 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     }, [])
 
     const startReviewWithScope = useCallback((nextScope: string) => {
+        if (nextScope === BEHAVIORAL_INTERVIEW_SCOPE) {
+            router.push('/behavior-interview')
+            return
+        }
         router.push(`/review/${mode}?scope=${encodeURIComponent(nextScope)}`)
     }, [mode, router])
 
@@ -123,32 +157,62 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         { value: 'mastery:can-explain', label: uiLanguage === 'en-US' ? 'My Can-Explain Cards' : '我的会讲题' },
     ]), [favoriteCount, uiLanguage])
 
-    const categoryScopeOptions = useMemo(() => (
-        scopeCategories.map(category => ({
-            value: `category:${category.id}`,
-            label: getLocalizedCategoryName(category, contentLanguage)
-        }))
-    ), [scopeCategories, contentLanguage])
+    const featuredQuickScopeOptions = useMemo(
+        () => quickScopeOptions.slice(0, 5),
+        [quickScopeOptions]
+    )
+    const groupedQuickScopeOptions = useMemo(
+        () => quickScopeOptions.slice(5),
+        [quickScopeOptions]
+    )
 
-    const pointScopeOptions = useMemo(() => (
+    const technicalDomainScopeOptions = useMemo(() => (
+        knowledgeCategories.map(category => ({
+            value: `category:${category.id}`,
+            label: contentLanguage === 'en-US' ? category.nameEn : category.name
+        }))
+    ), [knowledgeCategories, contentLanguage])
+
+    const categoryScopeOptions = useMemo(() => ([
+        ...technicalDomainScopeOptions,
+        {
+            value: BEHAVIORAL_INTERVIEW_SCOPE,
+            label: uiLanguage === 'en-US' ? 'Behavioral Interview' : '行为面试'
+        }
+    ]), [technicalDomainScopeOptions, uiLanguage])
+
+    const allPointScopeOptions = useMemo(() => (
         knowledgeCategories.flatMap(category => category.points.map(point => ({
             value: `point:${category.id}:${point.id}`,
-            label: `${contentLanguage === 'en-US' ? category.nameEn : category.name} / ${contentLanguage === 'en-US' ? point.nameEn : point.name}`
+            label: contentLanguage === 'en-US' ? point.nameEn : point.name
         })))
     ), [knowledgeCategories, contentLanguage])
 
-    const hasSelectedScopeInOptions = useMemo(() => {
-        const allValues = new Set<string>()
-        quickScopeOptions.forEach(item => allValues.add(item.value))
-        categoryScopeOptions.forEach(item => allValues.add(item.value))
-        pointScopeOptions.forEach(item => allValues.add(item.value))
-        return allValues.has(selectedScope)
-    }, [quickScopeOptions, categoryScopeOptions, pointScopeOptions, selectedScope])
-
     const allScopeOptions = useMemo(
-        () => [...quickScopeOptions, ...categoryScopeOptions, ...pointScopeOptions],
-        [quickScopeOptions, categoryScopeOptions, pointScopeOptions]
+        () => [...quickScopeOptions, ...categoryScopeOptions, ...allPointScopeOptions],
+        [quickScopeOptions, categoryScopeOptions, allPointScopeOptions]
     )
+
+    const draftDomainId = useMemo(
+        () => extractDomainIdFromScope(draftScope),
+        [draftScope]
+    )
+
+    const draftDomainScopeValue = useMemo(() => {
+        if (draftScope === BEHAVIORAL_INTERVIEW_SCOPE) return BEHAVIORAL_INTERVIEW_SCOPE
+        return draftDomainId ? `category:${draftDomainId}` : ''
+    }, [draftScope, draftDomainId])
+
+    const draftPointScopeOptions = useMemo(() => {
+        if (!draftDomainId) return []
+        const selectedDomain = knowledgeCategories.find(category => category.id === draftDomainId)
+        if (!selectedDomain) return []
+
+        return selectedDomain.points.map(point => ({
+            value: `point:${selectedDomain.id}:${point.id}`,
+            label: contentLanguage === 'en-US' ? point.nameEn : point.name
+        }))
+    }, [knowledgeCategories, draftDomainId, contentLanguage])
 
     const currentScopeLabel = useMemo(() => {
         const found = allScopeOptions.find(option => option.value === activeScope)
@@ -183,11 +247,181 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         }
 
         if (activeScope.startsWith('point:')) {
-            return currentScopeLabel.split(' / ')
+            const pointMatch = /^point:([^:]+):/.exec(activeScope)
+            const domainLabel = pointMatch
+                ? categoryScopeOptions.find(option => option.value === `category:${pointMatch[1]}`)?.label
+                : ''
+            return domainLabel ? [domainLabel, currentScopeLabel] : [currentScopeLabel]
         }
 
         return [currentScopeLabel]
-    }, [activeScope, currentScopeLabel, uiLanguage])
+    }, [activeScope, categoryScopeOptions, currentScopeLabel, uiLanguage])
+
+    const draftScopeLabel = useMemo(() => {
+        const found = allScopeOptions.find(option => option.value === draftScope)
+        if (found) return found.label
+        if (draftScope.startsWith('card:')) {
+            return uiLanguage === 'en-US' ? 'Single Card' : '单题速记'
+        }
+        return draftScope
+    }, [allScopeOptions, draftScope, uiLanguage])
+
+    const isDraftScopeApplyDisabled = draftScope === activeScope || (draftScope === 'favorites' && favoriteCount === 0)
+    const selectedDraftPointScope = draftScope.startsWith('point:') ? draftScope : ''
+
+    const openScopePanel = () => {
+        setDraftScope(selectedScope)
+        setIsScopePanelOpen(true)
+    }
+
+    const closeScopePanel = () => {
+        setDraftScope(selectedScope)
+        setIsScopePanelOpen(false)
+    }
+
+    const applyDraftScope = () => {
+        setSelectedScope(draftScope)
+        setIsScopePanelOpen(false)
+        startReviewWithScope(draftScope)
+    }
+
+    const renderScopeSelectorPanel = (align: 'left' | 'right') => (
+        <div className="relative" ref={scopePanelRef}>
+            <button
+                type="button"
+                onClick={() => (isScopePanelOpen ? closeScopePanel() : openScopePanel())}
+                className="h-8 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-left text-sm text-[#334155] transition-colors hover:border-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66]"
+            >
+                {scopeOptionsLoading ? t('common.loading') : draftScopeLabel}
+            </button>
+
+            {isScopePanelOpen && (
+                <div className={`absolute z-50 mt-2 w-[min(720px,calc(100vw-2rem))] rounded-2xl border border-[#CBD5E1] bg-white p-4 shadow-[0_18px_48px_rgba(15,23,42,0.16)] ${align === 'right' ? 'right-0' : 'left-0'}`}>
+                    <div className="mb-4 flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-[#334155]">{uiLanguage === 'en-US' ? 'Scope Filter' : '范围筛选'}</h3>
+                        <button
+                            type="button"
+                            onClick={() => setDraftScope('all')}
+                            className="text-sm text-[#64748B] hover:text-[#334155] transition-colors"
+                        >
+                            {uiLanguage === 'en-US' ? 'Reset' : '重置'}
+                        </button>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-[#475569]">{uiLanguage === 'en-US' ? 'Quick' : '快捷方式'}</p>
+                            <div className="flex flex-wrap gap-2">
+                                {featuredQuickScopeOptions.map(option => (
+                                    <button
+                                        key={`featured-${option.value}`}
+                                        type="button"
+                                        onClick={() => setDraftScope(option.value)}
+                                        className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${draftScope === option.value
+                                            ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8]'
+                                            : 'border-[#CBD5E1] bg-white text-[#475569] hover:border-[#94A3B8]'
+                                            }`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[120px_minmax(0,1fr)] md:items-center">
+                            <label htmlFor="scope-domain" className="text-sm font-medium text-[#475569]">
+                                {uiLanguage === 'en-US' ? 'Domain' : '领域'}
+                            </label>
+                            <select
+                                id="scope-domain"
+                                value={draftDomainScopeValue}
+                                onChange={(e) => {
+                                    const nextValue = e.target.value.trim()
+                                    if (!nextValue) {
+                                        setDraftScope('all')
+                                        return
+                                    }
+                                    setDraftScope(nextValue)
+                                }}
+                                className="h-11 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-base text-[#334155] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB]"
+                            >
+                                <option value="">{uiLanguage === 'en-US' ? 'Select domain' : '选择领域'}</option>
+                                {categoryScopeOptions.map(option => (
+                                    <option key={`domain-${option.value}`} value={option.value}>{option.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[120px_minmax(0,1fr)] md:items-center">
+                            <label htmlFor="scope-point" className="text-sm font-medium text-[#475569]">
+                                {uiLanguage === 'en-US' ? 'Knowledge Point' : '知识点'}
+                            </label>
+                            <select
+                                id="scope-point"
+                                value={selectedDraftPointScope}
+                                disabled={draftPointScopeOptions.length === 0}
+                                onChange={(e) => {
+                                    const nextValue = e.target.value.trim()
+                                    if (!nextValue) {
+                                        if (draftDomainId) {
+                                            setDraftScope(`category:${draftDomainId}`)
+                                        }
+                                        return
+                                    }
+                                    setDraftScope(nextValue)
+                                }}
+                                className="h-11 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-base text-[#334155] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB]"
+                            >
+                                <option value="">{uiLanguage === 'en-US' ? 'Select knowledge point' : '选择知识点'}</option>
+                                {draftPointScopeOptions.map(option => (
+                                    <option key={`point-${option.value}`} value={option.value}>{option.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {groupedQuickScopeOptions.length > 0 && (
+                            <div className="space-y-2">
+                                <p className="text-sm font-medium text-[#475569]">{uiLanguage === 'en-US' ? 'More' : '更多'}</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {groupedQuickScopeOptions.map(option => (
+                                        <button
+                                            key={`grouped-${option.value}`}
+                                            type="button"
+                                            onClick={() => setDraftScope(option.value)}
+                                            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${draftScope === option.value
+                                                ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8]'
+                                                : 'border-[#CBD5E1] bg-white text-[#475569] hover:border-[#94A3B8]'
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-end gap-2 border-t border-[#E2E8F0] pt-3">
+                        <button
+                            type="button"
+                            onClick={closeScopePanel}
+                            className="h-10 rounded-xl border border-[#CBD5E1] bg-white px-4 text-base text-[#475569] hover:bg-[#F8FAFC] transition-colors"
+                        >
+                            {uiLanguage === 'en-US' ? 'Cancel' : '取消'}
+                        </button>
+                        <button
+                            type="button"
+                            onClick={applyDraftScope}
+                            disabled={isDraftScopeApplyDisabled}
+                            className="h-10 rounded-xl bg-[#2563EB] px-5 text-base text-white hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            {uiLanguage === 'en-US' ? 'Apply' : '应用'}
+                        </button>
+                    </div>
+                </div>
+            )}
+        </div>
+    )
 
     const totalQueueCount = session?.queueCardIds.length || 0
     const reviewedCount = totalQueueCount > 0 ? session.cursor + 1 : 0
@@ -333,50 +567,12 @@ export default function ReviewPage({ params }: ReviewPageProps) {
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center max-w-xl w-full px-4">
                     <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
-                        <label htmlFor="review-scope-empty" className="text-sm text-[#64748B]">
+                        <span className="text-sm text-[#64748B]">
                             {uiLanguage === 'en-US' ? 'Scope' : '刷题范围'}
-                        </label>
-                        <select
-                            id="review-scope-empty"
-                            value={selectedScope}
-                            onChange={(e) => setSelectedScope(e.target.value)}
-                            className="h-8 min-w-[220px] rounded-md border border-[#CBD5E1] bg-white px-3 text-sm text-[#334155] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB]"
-                        >
-                            {!hasSelectedScopeInOptions && (
-                                <option value={selectedScope}>
-                                    {selectedScope.startsWith('card:')
-                                        ? (uiLanguage === 'en-US' ? 'Single Card' : '单题速记')
-                                        : selectedScope}
-                                </option>
-                            )}
-                            <optgroup label={uiLanguage === 'en-US' ? 'Quick' : '快捷'}>
-                                {quickScopeOptions.map(option => (
-                                    <option key={option.value} value={option.value}>{option.label}</option>
-                                ))}
-                            </optgroup>
-                            {categoryScopeOptions.length > 0 && (
-                                <optgroup label={uiLanguage === 'en-US' ? 'Domain' : '领域'}>
-                                    {categoryScopeOptions.map(option => (
-                                        <option key={option.value} value={option.value}>{option.label}</option>
-                                    ))}
-                                </optgroup>
-                            )}
-                            {pointScopeOptions.length > 0 && (
-                                <optgroup label={uiLanguage === 'en-US' ? 'Knowledge Point' : '知识点'}>
-                                    {pointScopeOptions.map(option => (
-                                        <option key={option.value} value={option.value}>{option.label}</option>
-                                    ))}
-                                </optgroup>
-                            )}
-                        </select>
-                        <button
-                            type="button"
-                            onClick={() => startReviewWithScope(selectedScope)}
-                            disabled={selectedScope === activeScope || (selectedScope === 'favorites' && favoriteCount === 0)}
-                            className="h-8 rounded-md bg-[#2563EB] px-3 text-sm text-white hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                            {scopeOptionsLoading ? t('common.loading') : (uiLanguage === 'en-US' ? 'Switch' : '切换')}
-                        </button>
+                        </span>
+                        <div className="min-w-[240px]">
+                            {renderScopeSelectorPanel('left')}
+                        </div>
                     </div>
                     <h2 className="text-xl font-bold text-[#0F172A] mb-2">{t('review.doneTitle')}</h2>
                     <p className="text-[#94A3B8] mb-6">
@@ -427,47 +623,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                             </div>
 
                             <div className="mt-3 space-y-2">
-                                <select
-                                    id="review-scope"
-                                    value={selectedScope}
-                                    onChange={(e) => setSelectedScope(e.target.value)}
-                                    className="h-8 w-full rounded-md border border-[#CBD5E1] bg-white px-3 text-sm text-[#334155] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB]"
-                                >
-                                    {!hasSelectedScopeInOptions && (
-                                        <option value={selectedScope}>
-                                            {selectedScope.startsWith('card:')
-                                                ? (uiLanguage === 'en-US' ? 'Single Card' : '单题速记')
-                                                : selectedScope}
-                                        </option>
-                                    )}
-                                    <optgroup label={uiLanguage === 'en-US' ? 'Quick' : '快捷'}>
-                                        {quickScopeOptions.map(option => (
-                                            <option key={option.value} value={option.value}>{option.label}</option>
-                                        ))}
-                                    </optgroup>
-                                    {categoryScopeOptions.length > 0 && (
-                                        <optgroup label={uiLanguage === 'en-US' ? 'Domain' : '领域'}>
-                                            {categoryScopeOptions.map(option => (
-                                                <option key={option.value} value={option.value}>{option.label}</option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                    {pointScopeOptions.length > 0 && (
-                                        <optgroup label={uiLanguage === 'en-US' ? 'Knowledge Point' : '知识点'}>
-                                            {pointScopeOptions.map(option => (
-                                                <option key={option.value} value={option.value}>{option.label}</option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                </select>
-                                <button
-                                    type="button"
-                                    onClick={() => startReviewWithScope(selectedScope)}
-                                    disabled={selectedScope === activeScope || (selectedScope === 'favorites' && favoriteCount === 0)}
-                                    className="h-8 w-full rounded-md bg-gradient-to-r from-[#2563EB] to-[#1D4ED8] px-3 text-xs font-medium text-white hover:brightness-105 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                >
-                                    {scopeOptionsLoading ? t('common.loading') : (uiLanguage === 'en-US' ? 'Apply Scope' : '应用范围')}
-                                </button>
+                                {renderScopeSelectorPanel('right')}
                             </div>
                         </div>
 
@@ -525,7 +681,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                                 isAnswerLoading={answerLoadingIds.has(currentCard.id)}
                             />
 
-                            <div className="mt-4 rounded-xl border border-white/65 bg-white/65 backdrop-blur-sm shadow-[0_4px_18px_rgba(15,23,42,0.06)]">
+                            <div className="mt-2">
                                 <FlashcardControls
                                     currentIndex={session.cursor}
                                     totalCount={session.queueCardIds.length}
