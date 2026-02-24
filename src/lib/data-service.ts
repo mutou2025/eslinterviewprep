@@ -812,6 +812,24 @@ export async function getDomainStats(): Promise<Map<string, { total: number; sol
     return stats
 }
 
+function parseReviewFilterScope(scope: string): { domainIds: string[]; pointPairs: Array<{ categoryId: string; pointId: string }> } {
+    const payload = scope.replace('filter:', '')
+    const [domainPart = '', pointPart = ''] = payload.split('|')
+    const domainIds = Array.from(new Set(domainPart.split(',').map(item => item.trim()).filter(Boolean)))
+    const pointPairs = pointPart
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean)
+        .map(item => {
+            const [categoryId = '', pointId = ''] = item.split('~')
+            if (!categoryId || !pointId) return null
+            return { categoryId, pointId }
+        })
+        .filter((pair): pair is { categoryId: string; pointId: string } => pair !== null)
+
+    return { domainIds, pointPairs }
+}
+
 export async function getReviewCards(scope: string, limit: number): Promise<Card[]> {
     const normalizedScope = (scope || 'all').trim()
 
@@ -834,6 +852,44 @@ export async function getReviewCards(scope: string, limit: number): Promise<Card
         if (!['new', 'fuzzy', 'can-explain', 'solid'].includes(mastery)) return []
         const cards = await getAllCardSummariesWithOverrides()
         return cards.filter(card => card.mastery === mastery).slice(0, limit)
+    }
+
+    if (normalizedScope.startsWith('filter:')) {
+        const { domainIds, pointPairs } = parseReviewFilterScope(normalizedScope)
+        const domainSet = new Set<string>(domainIds)
+        pointPairs.forEach(pair => domainSet.add(pair.categoryId))
+
+        const [cards, categories] = await Promise.all([
+            getAllCardSummariesWithOverrides(),
+            getCategories(3)
+        ])
+
+        let filtered = cards
+        if (domainSet.size > 0) {
+            filtered = filtered.filter(card => domainSet.has(card.categoryL3Id))
+        }
+
+        if (pointPairs.length > 0) {
+            const pointsByCategory = new Map<string, Set<string>>()
+            pointPairs.forEach(pair => {
+                const entry = pointsByCategory.get(pair.categoryId) || new Set<string>()
+                entry.add(pair.pointId)
+                pointsByCategory.set(pair.categoryId, entry)
+            })
+
+            const knowledgeCategories = buildTechnicalKnowledgeCategories(categories)
+            const taxonomyMap = new Map(knowledgeCategories.map(category => [category.id, category.points]))
+
+            filtered = filtered.filter(card => {
+                const pointSet = pointsByCategory.get(card.categoryL3Id)
+                if (!pointSet || pointSet.size === 0) return false
+                const points = taxonomyMap.get(card.categoryL3Id) || []
+                if (points.length === 0) return false
+                return pointSet.has(classifyCardToKnowledgePoint(card, points))
+            })
+        }
+
+        return filtered.slice(0, limit)
     }
 
     if (normalizedScope.startsWith('point:')) {

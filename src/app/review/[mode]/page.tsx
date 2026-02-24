@@ -20,13 +20,80 @@ interface ReviewPageProps {
 
 const BEHAVIORAL_INTERVIEW_SCOPE = 'link:behavior-interview'
 
-function extractDomainIdFromScope(scope: string): string {
-    if (scope.startsWith('category:')) {
-        return scope.replace('category:', '')
+type MultiFilterDraft = {
+    domainIds: string[]
+    pointKeys: string[]
+}
+
+function uniqueStringList(items: string[]): string[] {
+    return Array.from(new Set(items.map(item => item.trim()).filter(Boolean)))
+}
+
+function parsePointKey(pointKey: string): { categoryId: string; pointId: string } | null {
+    const idx = pointKey.indexOf(':')
+    if (idx <= 0 || idx >= pointKey.length - 1) return null
+    return {
+        categoryId: pointKey.slice(0, idx),
+        pointId: pointKey.slice(idx + 1)
+    }
+}
+
+function parseMultiFilterScope(scope: string): MultiFilterDraft {
+    const normalized = (scope || '').trim()
+
+    if (normalized.startsWith('category:')) {
+        const categoryId = normalized.replace('category:', '').trim()
+        return { domainIds: categoryId ? [categoryId] : [], pointKeys: [] }
     }
 
-    const pointMatch = /^point:([^:]+):/.exec(scope)
-    return pointMatch ? pointMatch[1] : ''
+    if (normalized.startsWith('point:')) {
+        const match = /^point:([^:]+):(.+)$/.exec(normalized)
+        if (!match) return { domainIds: [], pointKeys: [] }
+        const [, categoryId, pointId] = match
+        return {
+            domainIds: [categoryId],
+            pointKeys: [`${categoryId}:${pointId}`]
+        }
+    }
+
+    if (!normalized.startsWith('filter:')) {
+        return { domainIds: [], pointKeys: [] }
+    }
+
+    const payload = normalized.replace('filter:', '')
+    const [domainPart = '', pointPart = ''] = payload.split('|')
+    const domainIds = uniqueStringList(domainPart.split(','))
+    const pointKeys = uniqueStringList(
+        pointPart
+            .split(',')
+            .map(item => {
+                const [categoryId = '', pointId = ''] = item.split('~')
+                if (!categoryId || !pointId) return ''
+                return `${categoryId}:${pointId}`
+            })
+    )
+
+    return { domainIds, pointKeys }
+}
+
+function buildMultiFilterScope(draft: MultiFilterDraft): string {
+    const domainIds = uniqueStringList(draft.domainIds)
+    const pointKeys = uniqueStringList(draft.pointKeys)
+    const pointPairs = pointKeys
+        .map(parsePointKey)
+        .filter((item): item is { categoryId: string; pointId: string } => item !== null)
+
+    const domainSet = new Set<string>(domainIds)
+    pointPairs.forEach(pair => domainSet.add(pair.categoryId))
+
+    const mergedDomainIds = Array.from(domainSet)
+    if (mergedDomainIds.length === 0 && pointPairs.length === 0) {
+        return 'all'
+    }
+
+    const domainPart = mergedDomainIds.join(',')
+    const pointPart = pointPairs.map(pair => `${pair.categoryId}~${pair.pointId}`).join(',')
+    return `filter:${domainPart}|${pointPart}`
 }
 
 export default function ReviewPage({ params }: ReviewPageProps) {
@@ -46,7 +113,8 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     const [scopeCategories, setScopeCategories] = useState<Category[]>([])
     const [favoriteList, setFavoriteList] = useState<CardList | null>(null)
     const [isScopePanelOpen, setIsScopePanelOpen] = useState(false)
-    const [draftScope, setDraftScope] = useState(activeScope)
+    const [draftDomainIds, setDraftDomainIds] = useState<string[]>([])
+    const [draftPointKeys, setDraftPointKeys] = useState<string[]>([])
     const [dueCount, setDueCount] = useState(0)
     const [masteryStats, setMasteryStats] = useState<Record<MasteryStatus, number>>({
         new: 0, fuzzy: 0, 'can-explain': 0, solid: 0
@@ -93,8 +161,10 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     }, [params])
 
     useEffect(() => {
+        const parsed = parseMultiFilterScope(activeScope)
         setSelectedScope(activeScope)
-        setDraftScope(activeScope)
+        setDraftDomainIds(parsed.domainIds)
+        setDraftPointKeys(parsed.pointKeys)
         setIsScopePanelOpen(false)
     }, [activeScope])
 
@@ -104,7 +174,9 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node
             if (!scopePanelRef.current?.contains(target)) {
-                setDraftScope(selectedScope)
+                const parsed = parseMultiFilterScope(selectedScope)
+                setDraftDomainIds(parsed.domainIds)
+                setDraftPointKeys(parsed.pointKeys)
                 setIsScopePanelOpen(false)
             }
         }
@@ -161,20 +233,19 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         () => quickScopeOptions.slice(0, 5),
         [quickScopeOptions]
     )
-    const groupedQuickScopeOptions = useMemo(
-        () => quickScopeOptions.slice(5),
-        [quickScopeOptions]
-    )
 
     const technicalDomainScopeOptions = useMemo(() => (
         knowledgeCategories.map(category => ({
-            value: `category:${category.id}`,
+            value: category.id,
             label: contentLanguage === 'en-US' ? category.nameEn : category.name
         }))
     ), [knowledgeCategories, contentLanguage])
 
     const categoryScopeOptions = useMemo(() => ([
-        ...technicalDomainScopeOptions,
+        ...technicalDomainScopeOptions.map(option => ({
+            value: `category:${option.value}`,
+            label: option.label
+        })),
         {
             value: BEHAVIORAL_INTERVIEW_SCOPE,
             label: uiLanguage === 'en-US' ? 'Behavioral Interview' : '行为面试'
@@ -193,28 +264,55 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         [quickScopeOptions, categoryScopeOptions, allPointScopeOptions]
     )
 
-    const draftDomainId = useMemo(
-        () => extractDomainIdFromScope(draftScope),
-        [draftScope]
+    const availableDomainIdSet = useMemo(
+        () => new Set(technicalDomainScopeOptions.map(option => option.value)),
+        [technicalDomainScopeOptions]
     )
 
-    const draftDomainScopeValue = useMemo(() => {
-        if (draftScope === BEHAVIORAL_INTERVIEW_SCOPE) return BEHAVIORAL_INTERVIEW_SCOPE
-        return draftDomainId ? `category:${draftDomainId}` : ''
-    }, [draftScope, draftDomainId])
+    const effectiveDraftDomainIds = useMemo(
+        () => draftDomainIds.filter(id => availableDomainIdSet.has(id)),
+        [draftDomainIds, availableDomainIdSet]
+    )
 
     const draftPointScopeOptions = useMemo(() => {
-        if (!draftDomainId) return []
-        const selectedDomain = knowledgeCategories.find(category => category.id === draftDomainId)
-        if (!selectedDomain) return []
+        if (effectiveDraftDomainIds.length === 0) return []
+        const selectedDomainSet = new Set(effectiveDraftDomainIds)
 
-        return selectedDomain.points.map(point => ({
-            value: `point:${selectedDomain.id}:${point.id}`,
-            label: contentLanguage === 'en-US' ? point.nameEn : point.name
-        }))
-    }, [knowledgeCategories, draftDomainId, contentLanguage])
+        return knowledgeCategories
+            .filter(category => selectedDomainSet.has(category.id))
+            .flatMap(category => category.points.map(point => ({
+                value: `${category.id}:${point.id}`,
+                label: effectiveDraftDomainIds.length > 1
+                    ? `${contentLanguage === 'en-US' ? category.nameEn : category.name} / ${contentLanguage === 'en-US' ? point.nameEn : point.name}`
+                    : (contentLanguage === 'en-US' ? point.nameEn : point.name)
+            })))
+    }, [knowledgeCategories, effectiveDraftDomainIds, contentLanguage])
+
+    const availablePointKeySet = useMemo(
+        () => new Set(draftPointScopeOptions.map(option => option.value)),
+        [draftPointScopeOptions]
+    )
+
+    const effectiveDraftPointKeys = useMemo(
+        () => draftPointKeys.filter(key => availablePointKeySet.has(key)),
+        [draftPointKeys, availablePointKeySet]
+    )
 
     const currentScopeLabel = useMemo(() => {
+        if (activeScope.startsWith('filter:')) {
+            const parsed = parseMultiFilterScope(activeScope)
+            if (parsed.pointKeys.length > 0) {
+                return uiLanguage === 'en-US'
+                    ? `${parsed.domainIds.length} Domains / ${parsed.pointKeys.length} Topics`
+                    : `${parsed.domainIds.length}个领域 / ${parsed.pointKeys.length}个知识点`
+            }
+            if (parsed.domainIds.length > 0) {
+                return uiLanguage === 'en-US'
+                    ? `${parsed.domainIds.length} Domains`
+                    : `${parsed.domainIds.length}个领域`
+            }
+        }
+
         const found = allScopeOptions.find(option => option.value === activeScope)
         if (found) return found.label
         if (activeScope.startsWith('card:')) {
@@ -254,38 +352,73 @@ export default function ReviewPage({ params }: ReviewPageProps) {
             return domainLabel ? [domainLabel, currentScopeLabel] : [currentScopeLabel]
         }
 
+        if (activeScope.startsWith('filter:')) {
+            const parsed = parseMultiFilterScope(activeScope)
+            const tags: string[] = []
+            if (parsed.domainIds.length > 0) {
+                tags.push(uiLanguage === 'en-US' ? `${parsed.domainIds.length} Domains` : `${parsed.domainIds.length}个领域`)
+            }
+            if (parsed.pointKeys.length > 0) {
+                tags.push(uiLanguage === 'en-US' ? `${parsed.pointKeys.length} Topics` : `${parsed.pointKeys.length}个知识点`)
+            }
+            return tags.length > 0 ? tags : [currentScopeLabel]
+        }
+
         return [currentScopeLabel]
     }, [activeScope, categoryScopeOptions, currentScopeLabel, uiLanguage])
 
+    const nextDraftScope = useMemo(
+        () => buildMultiFilterScope({
+            domainIds: effectiveDraftDomainIds,
+            pointKeys: effectiveDraftPointKeys
+        }),
+        [effectiveDraftDomainIds, effectiveDraftPointKeys]
+    )
+
     const draftScopeLabel = useMemo(() => {
-        const found = allScopeOptions.find(option => option.value === draftScope)
+        const parsed = parseMultiFilterScope(nextDraftScope)
+        if (parsed.pointKeys.length > 0) {
+            return uiLanguage === 'en-US'
+                ? `${parsed.domainIds.length} Domains / ${parsed.pointKeys.length} Topics`
+                : `${parsed.domainIds.length}个领域 / ${parsed.pointKeys.length}个知识点`
+        }
+        if (parsed.domainIds.length > 0) {
+            return uiLanguage === 'en-US'
+                ? `${parsed.domainIds.length} Domains`
+                : `${parsed.domainIds.length}个领域`
+        }
+
+        const found = allScopeOptions.find(option => option.value === nextDraftScope)
         if (found) return found.label
-        if (draftScope.startsWith('card:')) {
+        if (nextDraftScope.startsWith('card:')) {
             return uiLanguage === 'en-US' ? 'Single Card' : '单题速记'
         }
-        return draftScope
-    }, [allScopeOptions, draftScope, uiLanguage])
+        return nextDraftScope
+    }, [allScopeOptions, nextDraftScope, uiLanguage])
 
-    const isDraftScopeApplyDisabled = draftScope === activeScope || (draftScope === 'favorites' && favoriteCount === 0)
-    const selectedDraftPointScope = draftScope.startsWith('point:') ? draftScope : ''
+    const isDraftScopeApplyDisabled = nextDraftScope === activeScope
 
     const openScopePanel = () => {
-        setDraftScope(selectedScope)
+        const parsed = parseMultiFilterScope(selectedScope)
+        setDraftDomainIds(parsed.domainIds)
+        setDraftPointKeys(parsed.pointKeys)
         setIsScopePanelOpen(true)
     }
 
     const closeScopePanel = () => {
-        setDraftScope(selectedScope)
+        const parsed = parseMultiFilterScope(selectedScope)
+        setDraftDomainIds(parsed.domainIds)
+        setDraftPointKeys(parsed.pointKeys)
         setIsScopePanelOpen(false)
     }
 
     const applyDraftScope = () => {
-        setSelectedScope(draftScope)
+        setSelectedScope(nextDraftScope)
         setIsScopePanelOpen(false)
-        startReviewWithScope(draftScope)
+        startReviewWithScope(nextDraftScope)
     }
 
-    const renderScopeSelectorPanel = (align: 'left' | 'right') => (
+    const renderScopeSelectorPanel = (align: 'left' | 'right' | 'auto') => (
         <div className="relative" ref={scopePanelRef}>
             <button
                 type="button"
@@ -296,116 +429,76 @@ export default function ReviewPage({ params }: ReviewPageProps) {
             </button>
 
             {isScopePanelOpen && (
-                <div className={`absolute z-50 mt-2 w-[min(720px,calc(100vw-2rem))] rounded-2xl border border-[#CBD5E1] bg-white p-4 shadow-[0_18px_48px_rgba(15,23,42,0.16)] ${align === 'right' ? 'right-0' : 'left-0'}`}>
-                    <div className="mb-4 flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-[#334155]">{uiLanguage === 'en-US' ? 'Scope Filter' : '范围筛选'}</h3>
+                <div className={`absolute z-[600] mt-2 w-[min(220px,calc(100vw-1rem))] max-h-[70vh] overflow-auto rounded-xl border border-[#CBD5E1] bg-white p-3 shadow-[0_18px_48px_rgba(15,23,42,0.16)] ${align === 'right' ? 'right-0' : align === 'auto' ? 'left-0 xl:left-auto xl:right-0' : 'left-0'}`}>
+                    <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-base font-semibold text-[#334155]">{uiLanguage === 'en-US' ? 'Scope Filter' : '范围筛选'}</h3>
                         <button
                             type="button"
-                            onClick={() => setDraftScope('all')}
-                            className="text-sm text-[#64748B] hover:text-[#334155] transition-colors"
+                            onClick={() => {
+                                setDraftDomainIds([])
+                                setDraftPointKeys([])
+                            }}
+                            className="text-xs text-[#64748B] hover:text-[#334155] transition-colors"
                         >
                             {uiLanguage === 'en-US' ? 'Reset' : '重置'}
                         </button>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <p className="text-sm font-medium text-[#475569]">{uiLanguage === 'en-US' ? 'Quick' : '快捷方式'}</p>
-                            <div className="flex flex-wrap gap-2">
-                                {featuredQuickScopeOptions.map(option => (
-                                    <button
-                                        key={`featured-${option.value}`}
-                                        type="button"
-                                        onClick={() => setDraftScope(option.value)}
-                                        className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${draftScope === option.value
-                                            ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8]'
-                                            : 'border-[#CBD5E1] bg-white text-[#475569] hover:border-[#94A3B8]'
-                                            }`}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[120px_minmax(0,1fr)] md:items-center">
-                            <label htmlFor="scope-domain" className="text-sm font-medium text-[#475569]">
+                    <div className="space-y-3">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-[40px_minmax(0,1fr)] md:items-center">
+                            <label htmlFor="scope-domain" className="text-xs font-medium text-[#475569]">
                                 {uiLanguage === 'en-US' ? 'Domain' : '领域'}
                             </label>
                             <select
                                 id="scope-domain"
-                                value={draftDomainScopeValue}
+                                multiple
+                                value={effectiveDraftDomainIds}
                                 onChange={(e) => {
-                                    const nextValue = e.target.value.trim()
-                                    if (!nextValue) {
-                                        setDraftScope('all')
-                                        return
-                                    }
-                                    setDraftScope(nextValue)
+                                    const selectedIds = Array.from(e.currentTarget.selectedOptions).map(option => option.value)
+                                    const nextDomainIds = uniqueStringList(selectedIds)
+                                    const nextDomainSet = new Set(nextDomainIds)
+                                    setDraftDomainIds(nextDomainIds)
+                                    setDraftPointKeys(prev => prev.filter(key => {
+                                        const parsed = parsePointKey(key)
+                                        return parsed ? nextDomainSet.has(parsed.categoryId) : false
+                                    }))
                                 }}
-                                className="h-11 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-base text-[#334155] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB]"
+                                className="h-24 w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#334155] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB]"
                             >
-                                <option value="">{uiLanguage === 'en-US' ? 'Select domain' : '选择领域'}</option>
-                                {categoryScopeOptions.map(option => (
+                                {technicalDomainScopeOptions.map(option => (
                                     <option key={`domain-${option.value}`} value={option.value}>{option.label}</option>
                                 ))}
                             </select>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[120px_minmax(0,1fr)] md:items-center">
-                            <label htmlFor="scope-point" className="text-sm font-medium text-[#475569]">
+                        <div className="grid grid-cols-1 gap-2 md:grid-cols-[40px_minmax(0,1fr)] md:items-center">
+                            <label htmlFor="scope-point" className="text-xs font-medium text-[#475569]">
                                 {uiLanguage === 'en-US' ? 'Knowledge Point' : '知识点'}
                             </label>
                             <select
                                 id="scope-point"
-                                value={selectedDraftPointScope}
+                                multiple
+                                value={effectiveDraftPointKeys}
                                 disabled={draftPointScopeOptions.length === 0}
                                 onChange={(e) => {
-                                    const nextValue = e.target.value.trim()
-                                    if (!nextValue) {
-                                        if (draftDomainId) {
-                                            setDraftScope(`category:${draftDomainId}`)
-                                        }
-                                        return
-                                    }
-                                    setDraftScope(nextValue)
+                                    const selectedKeys = Array.from(e.currentTarget.selectedOptions).map(option => option.value)
+                                    setDraftPointKeys(uniqueStringList(selectedKeys))
                                 }}
-                                className="h-11 w-full rounded-2xl border border-[#CBD5E1] bg-white px-4 text-base text-[#334155] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB]"
+                                className="h-24 w-full rounded-xl border border-[#CBD5E1] bg-white px-3 py-2 text-sm text-[#334155] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] focus:outline-none focus:ring-2 focus:ring-[#93C5FD66] focus:border-[#2563EB]"
                             >
-                                <option value="">{uiLanguage === 'en-US' ? 'Select knowledge point' : '选择知识点'}</option>
                                 {draftPointScopeOptions.map(option => (
                                     <option key={`point-${option.value}`} value={option.value}>{option.label}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {groupedQuickScopeOptions.length > 0 && (
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium text-[#475569]">{uiLanguage === 'en-US' ? 'More' : '更多'}</p>
-                                <div className="flex flex-wrap gap-2">
-                                    {groupedQuickScopeOptions.map(option => (
-                                        <button
-                                            key={`grouped-${option.value}`}
-                                            type="button"
-                                            onClick={() => setDraftScope(option.value)}
-                                            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${draftScope === option.value
-                                                ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8]'
-                                                : 'border-[#CBD5E1] bg-white text-[#475569] hover:border-[#94A3B8]'
-                                                }`}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </div>
 
-                    <div className="mt-4 flex items-center justify-end gap-2 border-t border-[#E2E8F0] pt-3">
+                    <div className="mt-3 flex items-center justify-end gap-2 border-t border-[#E2E8F0] pt-2.5">
                         <button
                             type="button"
                             onClick={closeScopePanel}
-                            className="h-10 rounded-xl border border-[#CBD5E1] bg-white px-4 text-base text-[#475569] hover:bg-[#F8FAFC] transition-colors"
+                            className="h-8 rounded-lg border border-[#CBD5E1] bg-white px-3 text-sm text-[#475569] hover:bg-[#F8FAFC] transition-colors"
                         >
                             {uiLanguage === 'en-US' ? 'Cancel' : '取消'}
                         </button>
@@ -413,7 +506,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                             type="button"
                             onClick={applyDraftScope}
                             disabled={isDraftScopeApplyDisabled}
-                            className="h-10 rounded-xl bg-[#2563EB] px-5 text-base text-white hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="h-8 rounded-lg bg-[#2563EB] px-4 text-sm text-white hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             {uiLanguage === 'en-US' ? 'Apply' : '应用'}
                         </button>
@@ -594,7 +687,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     const softPillClass = 'px-2 py-0.5 rounded-full text-xs border border-white/70 text-[#475569] bg-white/75 backdrop-blur-sm'
 
     return (
-        <div className="relative min-h-screen py-4 px-4 overflow-hidden">
+        <div className="relative min-h-screen py-4 px-4 overflow-visible">
             <div className="pointer-events-none absolute inset-0 -z-10">
                 <div className="absolute -top-24 -left-20 h-72 w-72 rounded-full bg-[#BFDBFE]/35 blur-3xl" />
                 <div className="absolute top-1/3 -right-24 h-72 w-72 rounded-full bg-[#C7D2FE]/30 blur-3xl" />
@@ -603,8 +696,8 @@ export default function ReviewPage({ params }: ReviewPageProps) {
             </div>
             <div className="max-w-[1400px] mx-auto">
                 <div className="grid grid-cols-1 xl:grid-cols-[260px_minmax(0,1fr)_260px] gap-4 xl:gap-6 items-start">
-                    <aside className="order-2 xl:order-1 space-y-3 xl:sticky xl:top-4">
-                        <div className={infoCardClass}>
+                    <aside className="order-2 xl:order-1 relative z-40 space-y-3 xl:sticky xl:top-4">
+                        <div className={`${infoCardClass} z-20 overflow-visible`}>
                             <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-[#DBEAFE]/55 via-white/10 to-[#E2E8F0]/40" />
                             <p className="text-xs text-[#94A3B8] mb-1">
                                 {uiLanguage === 'en-US' ? 'Current Scope' : '当前范围'}
@@ -630,42 +723,23 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                         <div className={infoCardClass}>
                             <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-[#E0E7FF]/40 via-white/10 to-[#DBEAFE]/40" />
                             <p className="text-xs text-[#94A3B8] mb-2">
-                                {uiLanguage === 'en-US' ? 'Queue' : '学习队列'}
+                                {uiLanguage === 'en-US' ? 'Quick Scope' : '快捷范围'}
                             </p>
-                            <div className="grid grid-cols-2 gap-2 text-xs">
-                                <div className="rounded-lg border border-white/70 bg-white/70 px-2 py-1.5 text-[#334155]">
-                                    <span className="text-[#64748B]">{uiLanguage === 'en-US' ? 'Due' : '到期'}</span>
-                                    <div className="text-sm font-semibold">{dueCount}</div>
-                                </div>
-                                <div className="rounded-lg border border-white/70 bg-white/70 px-2 py-1.5 text-[#334155]">
-                                    <span className="text-[#64748B]">{uiLanguage === 'en-US' ? 'New' : '未学'}</span>
-                                    <div className="text-sm font-semibold">{masteryStats.new}</div>
-                                </div>
-                                <div className="rounded-lg border border-white/70 bg-white/70 px-2 py-1.5 text-[#334155]">
-                                    <span className="text-[#64748B]">{uiLanguage === 'en-US' ? 'Wrong' : '模糊'}</span>
-                                    <div className="text-sm font-semibold">{masteryStats.fuzzy}</div>
-                                </div>
-                                <div className="rounded-lg border border-white/70 bg-white/70 px-2 py-1.5 text-[#334155]">
-                                    <span className="text-[#64748B]">{uiLanguage === 'en-US' ? 'Star' : '收藏'}</span>
-                                    <div className="text-sm font-semibold">{favoriteCount}</div>
-                                </div>
-                            </div>
-                            <div className="mt-3 flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => startReviewWithScope('mastery:fuzzy')}
-                                    className="flex-1 h-8 rounded-md border border-white/70 bg-white/75 text-xs text-[#334155] hover:bg-white transition-colors"
-                                >
-                                    {uiLanguage === 'en-US' ? 'Wrong Set' : '错题本'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => startReviewWithScope('favorites')}
-                                    disabled={favoriteCount === 0}
-                                    className="flex-1 h-8 rounded-md border border-white/70 bg-white/75 text-xs text-[#334155] hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {uiLanguage === 'en-US' ? 'Favorites' : '收藏夹'}
-                                </button>
+                            <div className="grid grid-cols-1 gap-2">
+                                {featuredQuickScopeOptions.map(option => (
+                                    <button
+                                        key={`quick-scope-${option.value}`}
+                                        type="button"
+                                        onClick={() => startReviewWithScope(option.value)}
+                                        disabled={option.value === 'favorites' && favoriteCount === 0}
+                                        className={`h-8 rounded-md border px-3 text-left text-xs transition-colors ${activeScope === option.value
+                                            ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8]'
+                                            : 'border-white/70 bg-white/75 text-[#334155] hover:bg-white'
+                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                    >
+                                        {option.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </aside>
@@ -712,26 +786,51 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                         <div className={infoCardClass}>
                             <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-[#E0E7FF]/40 via-white/10 to-[#DBEAFE]/40" />
                             <p className="text-xs text-[#94A3B8] mb-2">
-                                {uiLanguage === 'en-US' ? 'Mastery Distribution' : '熟练度分布'}
+                                {uiLanguage === 'en-US' ? 'Queue' : '学习队列'}
                             </p>
-                            <MasteryProgress stats={masteryStats} showLabels={false} />
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="rounded-lg border border-white/70 bg-white/70 px-2 py-1.5 text-[#334155]">
+                                    <span className="text-[#64748B]">{uiLanguage === 'en-US' ? 'Due' : '到期'}</span>
+                                    <div className="text-sm font-semibold">{dueCount}</div>
+                                </div>
+                                <div className="rounded-lg border border-white/70 bg-white/70 px-2 py-1.5 text-[#334155]">
+                                    <span className="text-[#64748B]">{uiLanguage === 'en-US' ? 'New' : '未学'}</span>
+                                    <div className="text-sm font-semibold">{masteryStats.new}</div>
+                                </div>
+                                <div className="rounded-lg border border-white/70 bg-white/70 px-2 py-1.5 text-[#334155]">
+                                    <span className="text-[#64748B]">{uiLanguage === 'en-US' ? 'Wrong' : '模糊'}</span>
+                                    <div className="text-sm font-semibold">{masteryStats.fuzzy}</div>
+                                </div>
+                                <div className="rounded-lg border border-white/70 bg-white/70 px-2 py-1.5 text-[#334155]">
+                                    <span className="text-[#64748B]">{uiLanguage === 'en-US' ? 'Star' : '收藏'}</span>
+                                    <div className="text-sm font-semibold">{favoriteCount}</div>
+                                </div>
+                            </div>
+                            <div className="mt-3 flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => startReviewWithScope('mastery:fuzzy')}
+                                    className="flex-1 h-8 rounded-md border border-white/70 bg-white/75 text-xs text-[#334155] hover:bg-white transition-colors"
+                                >
+                                    {uiLanguage === 'en-US' ? 'Wrong Set' : '错题本'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => startReviewWithScope('favorites')}
+                                    disabled={favoriteCount === 0}
+                                    className="flex-1 h-8 rounded-md border border-white/70 bg-white/75 text-xs text-[#334155] hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {uiLanguage === 'en-US' ? 'Favorites' : '收藏夹'}
+                                </button>
+                            </div>
                         </div>
 
                         <div className={infoCardClass}>
-                            <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-[#DBEAFE]/45 via-white/10 to-[#E2E8F0]/35" />
+                            <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-[#E0E7FF]/40 via-white/10 to-[#DBEAFE]/40" />
                             <p className="text-xs text-[#94A3B8] mb-2">
-                                {uiLanguage === 'en-US' ? 'Shortcuts' : '快捷键'}
+                                {uiLanguage === 'en-US' ? 'Mastery Distribution' : '熟练度分布'}
                             </p>
-                            <div className="space-y-1.5 text-xs text-[#475569]">
-                                <div><span className="font-mono bg-white/75 px-1.5 py-0.5 rounded border border-white/70">Space</span> {uiLanguage === 'en-US' ? 'Flip card' : '翻面'}</div>
-                                <div><span className="font-mono bg-white/75 px-1.5 py-0.5 rounded border border-white/70">1-4</span> {uiLanguage === 'en-US' ? 'Mark mastery' : '标记掌握度'}</div>
-                                <div><span className="font-mono bg-white/75 px-1.5 py-0.5 rounded border border-white/70">← →</span> {uiLanguage === 'en-US' ? 'Prev/Next' : '上一题/下一题'}</div>
-                            </div>
-                            <p className="text-xs text-[#64748B] mt-3">
-                                {uiLanguage === 'en-US'
-                                    ? (dueCount > 0 ? `${dueCount} cards are due now` : 'No due card at this moment')
-                                    : (dueCount > 0 ? `当前有 ${dueCount} 道题到期` : '当前暂无到期题目')}
-                            </p>
+                            <MasteryProgress stats={masteryStats} showLabels={false} />
                         </div>
                     </aside>
                 </div>
