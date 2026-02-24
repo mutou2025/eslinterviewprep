@@ -74,7 +74,7 @@ export function Flashcard({
     }, [isFlipped, card.answer, card.id, onLoadAnswer])
 
     return (
-        <div ref={cardContainerRef} className="w-full max-w-3xl mx-auto">
+        <div ref={cardContainerRef} className="w-full max-w-4xl mx-auto">
             {/* 卡片容器 - 3D 翻转 */}
             <div
                 className="relative w-full min-h-[400px] cursor-pointer perspective-1000"

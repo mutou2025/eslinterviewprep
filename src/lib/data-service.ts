@@ -8,6 +8,7 @@ import {
     getCachedCardSummariesByCategory,
     type CardSummary
 } from './card-cache'
+import { buildTechnicalKnowledgeCategories, classifyCardToKnowledgePoint } from './technical-taxonomy'
 
 type CardRow = {
     id: string
@@ -111,7 +112,10 @@ type TranslationApiResponse = {
 }
 
 const CARD_SELECT_SUMMARY = 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,title_zh,title_en,question,question_zh,question_en,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
+const CARD_SELECT_SUMMARY_LEGACY = 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
 const CARD_SELECT_WITH_ANSWER = `${CARD_SELECT_SUMMARY},answer,answer_zh,answer_en`
+const CARD_SELECT_WITH_ANSWER_LEGACY = `${CARD_SELECT_SUMMARY_LEGACY},answer`
+const MISSING_I18N_COLUMN_REGEX = /column cards\.(title_zh|title_en|question_zh|question_en|answer_zh|answer_en) does not exist/i
 
 function toCard(row: CardRow): Card {
     return {
@@ -184,6 +188,56 @@ async function getAccessToken(): Promise<string | null> {
     const { data, error } = await supabase.auth.getSession()
     if (error) return null
     return data.session?.access_token ?? null
+}
+
+function getErrorMessage(error: unknown): string {
+    if (!error) return ''
+    if (typeof error === 'string') return error
+    if (typeof error === 'object' && error !== null) {
+        const withMessage = error as { message?: unknown }
+        if (typeof withMessage.message === 'string') return withMessage.message
+        try {
+            return JSON.stringify(error)
+        } catch {
+            return String(error)
+        }
+    }
+    return String(error)
+}
+
+function getErrorCode(error: unknown): string {
+    if (!error || typeof error !== 'object') return ''
+    const withCode = error as { code?: unknown }
+    return typeof withCode.code === 'string' ? withCode.code : ''
+}
+
+function isMissingI18nColumnError(error: unknown): boolean {
+    return MISSING_I18N_COLUMN_REGEX.test(getErrorMessage(error))
+}
+
+function shouldFallbackToLegacyCardSelect(error: unknown): boolean {
+    if (!error) return false
+    if (isMissingI18nColumnError(error)) return true
+    if (getErrorCode(error) === '42703') return true
+
+    // Some supabase runtime paths stringify Postgrest errors as "{}".
+    const message = getErrorMessage(error).trim()
+    return message === '' || message === '{}'
+}
+
+async function runCardsSelectWithFallback<TData>(
+    queryFactory: (selectColumns: string) => Promise<{ data: TData; error: unknown }>,
+    includeAnswer: boolean
+): Promise<{ data: TData; error: unknown }> {
+    const firstSelect = includeAnswer ? CARD_SELECT_WITH_ANSWER : CARD_SELECT_SUMMARY
+    const fallbackSelect = includeAnswer ? CARD_SELECT_WITH_ANSWER_LEGACY : CARD_SELECT_SUMMARY_LEGACY
+
+    let result = await queryFactory(firstSelect)
+    if (!result.error) return result
+    if (!shouldFallbackToLegacyCardSelect(result.error)) return result
+
+    result = await queryFactory(fallbackSelect)
+    return result
 }
 
 export async function generateInterviewEnglishDraft(input: {
@@ -280,15 +334,16 @@ async function getAllCardsWithOverridesInternal(options: { includeAnswer: boolea
     const supabase = getSupabaseClient()
     const userId = await getUserId()
 
-    const selectColumns = options.includeAnswer ? CARD_SELECT_WITH_ANSWER : CARD_SELECT_SUMMARY
-
-    const { data: cardRows, error: cardsError } = await supabase
-        .from('cards')
-        .select(selectColumns)
-        .order('id')
+    const { data: cardRows, error: cardsError } = await runCardsSelectWithFallback(
+        (selectColumns) => supabase
+            .from('cards')
+            .select(selectColumns)
+            .order('id'),
+        options.includeAnswer
+    )
 
     if (cardsError || !cardRows) {
-        console.error('Failed to load cards:', cardsError)
+        console.error('Failed to load cards:', getErrorMessage(cardsError))
         return []
     }
 
@@ -462,13 +517,21 @@ export async function getCardWithOverride(cardId: string): Promise<Card | undefi
     const supabase = getSupabaseClient()
     const userId = await getUserId()
 
-    const { data: cardRow, error } = await supabase
-        .from('cards')
-        .select(CARD_SELECT_WITH_ANSWER)
-        .eq('id', cardId)
-        .maybeSingle()
+    const { data: cardRow, error } = await runCardsSelectWithFallback(
+        (selectColumns) => supabase
+            .from('cards')
+            .select(selectColumns)
+            .eq('id', cardId)
+            .maybeSingle(),
+        true
+    )
 
-    if (error || !cardRow) return undefined
+    if (error || !cardRow) {
+        if (error) {
+            console.error('Failed to load card detail:', getErrorMessage(error))
+        }
+        return undefined
+    }
 
     const card = toCard(cardRow as CardRow)
 
@@ -488,13 +551,21 @@ export async function getCardSummary(cardId: string): Promise<Card | undefined> 
     const supabase = getSupabaseClient()
     const userId = await getUserId()
 
-    const { data: cardRow, error } = await supabase
-        .from('cards')
-        .select(CARD_SELECT_SUMMARY)
-        .eq('id', cardId)
-        .maybeSingle()
+    const { data: cardRow, error } = await runCardsSelectWithFallback(
+        (selectColumns) => supabase
+            .from('cards')
+            .select(selectColumns)
+            .eq('id', cardId)
+            .maybeSingle(),
+        false
+    )
 
-    if (error || !cardRow) return undefined
+    if (error || !cardRow) {
+        if (error) {
+            console.error('Failed to load card summary:', getErrorMessage(error))
+        }
+        return undefined
+    }
 
     const card = toCard(cardRow as CardRow)
 
@@ -561,12 +632,20 @@ export async function getCardsByCategory(categoryL3Id: string): Promise<Card[]> 
     const supabase = getSupabaseClient()
     const userId = await getUserId()
 
-    const { data: cardRows, error } = await supabase
-        .from('cards')
-        .select(CARD_SELECT_SUMMARY)
-        .eq('category_l3_id', categoryL3Id)
+    const { data: cardRows, error } = await runCardsSelectWithFallback(
+        (selectColumns) => supabase
+            .from('cards')
+            .select(selectColumns)
+            .eq('category_l3_id', categoryL3Id),
+        false
+    )
 
-    if (error || !cardRows) return []
+    if (error || !cardRows) {
+        if (error) {
+            console.error('Failed to load cards by category:', getErrorMessage(error))
+        }
+        return []
+    }
 
     const cards = (cardRows as CardRow[]).map(toCard)
     if (!userId) return cards
@@ -594,12 +673,20 @@ export async function getCardsByIds(cardIds: string[]): Promise<Card[]> {
     const supabase = getSupabaseClient()
     const userId = await getUserId()
 
-    const { data: cardRows, error } = await supabase
-        .from('cards')
-        .select(CARD_SELECT_SUMMARY)
-        .in('id', cardIds)
+    const { data: cardRows, error } = await runCardsSelectWithFallback(
+        (selectColumns) => supabase
+            .from('cards')
+            .select(selectColumns)
+            .in('id', cardIds),
+        false
+    )
 
-    if (error || !cardRows) return []
+    if (error || !cardRows) {
+        if (error) {
+            console.error('Failed to load cards by ids:', getErrorMessage(error))
+        }
+        return []
+    }
 
     const cards = (cardRows as CardRow[]).map(toCard)
     if (!userId) return cards
@@ -726,52 +813,68 @@ export async function getDomainStats(): Promise<Map<string, { total: number; sol
 }
 
 export async function getReviewCards(scope: string, limit: number): Promise<Card[]> {
-    if (scope.startsWith('list:')) {
-        const listId = scope.replace('list:', '')
-        return getCardsByList(listId)
+    const normalizedScope = (scope || 'all').trim()
+
+    if (normalizedScope.startsWith('card:')) {
+        const cardId = normalizedScope.replace('card:', '')
+        if (!cardId) return []
+        const card = await getCardWithOverride(cardId)
+        return card ? [card] : []
     }
 
-    if (scope.startsWith('category:')) {
-        const categoryId = scope.replace('category:', '')
-        const supabase = getSupabaseClient()
-        const { data: cardRows, error } = await supabase
-            .from('cards')
-            .select(CARD_SELECT_SUMMARY)
-            .eq('category_l3_id', categoryId)
-            .limit(limit)
-
-        if (error || !cardRows) return []
-        const cards = (cardRows as CardRow[]).map(toCard)
-        const overrides = await getOverridesByIds(cards.map(c => c.id))
-        return applyOverridesToCards(cards, overrides)
+    if (normalizedScope === 'favorites') {
+        const favoriteList = await getDefaultList()
+        if (!favoriteList || favoriteList.cardIds.length === 0) return []
+        const cards = await getCardsByIds(favoriteList.cardIds)
+        return cards.slice(0, limit)
     }
 
-    const supabase = getSupabaseClient()
-    const userId = await getUserId()
-    if (!userId) return []
+    if (normalizedScope.startsWith('mastery:')) {
+        const mastery = normalizedScope.replace('mastery:', '') as MasteryStatus
+        if (!['new', 'fuzzy', 'can-explain', 'solid'].includes(mastery)) return []
+        const cards = await getAllCardSummariesWithOverrides()
+        return cards.filter(card => card.mastery === mastery).slice(0, limit)
+    }
 
-    const { data: dueRows } = await supabase
-        .from('card_overrides')
-        .select('card_id')
-        .eq('user_id', userId)
-        .neq('mastery', 'solid')
-        .lte('due_at', new Date().toISOString())
-        .limit(limit)
+    if (normalizedScope.startsWith('point:')) {
+        const match = /^point:([^:]+):(.+)$/.exec(normalizedScope)
+        if (!match) return []
+        const [, categoryId, pointId] = match
 
-    const dueIds = (dueRows as Array<{ card_id: string }> | null || []).map(row => row.card_id)
-    const cards = await getCardsByIds(dueIds)
+        const [cards, categories] = await Promise.all([
+            getCardsByCategory(categoryId),
+            getCategories(3)
+        ])
+        if (cards.length === 0 || categories.length === 0) return []
 
-    if (cards.length >= limit) return cards
+        const knowledgeCategories = buildTechnicalKnowledgeCategories(categories)
+        const points = knowledgeCategories.find(category => category.id === categoryId)?.points || []
+        if (points.length === 0) return []
 
-    const remaining = limit - cards.length
-    const { data: extraRows } = await supabase
-        .from('cards')
-        .select(CARD_SELECT_SUMMARY)
-        .limit(remaining)
+        return cards
+            .filter(card => classifyCardToKnowledgePoint(card, points) === pointId)
+            .slice(0, limit)
+    }
 
-    const extraCards = (extraRows as CardRow[] | null || []).map(toCard)
-    const extraOverrides = await getOverridesByIds(extraCards.map(c => c.id))
-    return [...cards, ...applyOverridesToCards(extraCards, extraOverrides)]
+    if (normalizedScope.startsWith('list:')) {
+        const listId = normalizedScope.replace('list:', '')
+        const cards = await getCardsByList(listId)
+        return cards.slice(0, limit)
+    }
+
+    if (normalizedScope.startsWith('category:')) {
+        const categoryId = normalizedScope.replace('category:', '')
+        const cards = await getCardsByCategory(categoryId)
+        return cards.slice(0, limit)
+    }
+
+    if (normalizedScope === 'due') {
+        const cards = await getDueCards(new Date())
+        return cards.slice(0, limit)
+    }
+
+    const cards = await getAllCardSummariesWithOverrides()
+    return cards.slice(0, limit)
 }
 
 export async function syncCardSummaryCache(): Promise<void> {
@@ -784,17 +887,22 @@ export async function syncCardSummaryCache(): Promise<void> {
         const from = page * pageSize
         const to = from + pageSize - 1
 
-        let query = supabase
-            .from('cards')
-            .select(CARD_SELECT_SUMMARY)
-            .order('updated_at', { ascending: true })
-            .range(from, to)
+        const { data: rows, error } = await runCardsSelectWithFallback(
+            (selectColumns) => {
+                let query = supabase
+                    .from('cards')
+                    .select(selectColumns)
+                    .order('updated_at', { ascending: true })
+                    .range(from, to)
 
-        if (lastSynced) {
-            query = query.gt('updated_at', lastSynced)
-        }
+                if (lastSynced) {
+                    query = query.gt('updated_at', lastSynced)
+                }
 
-        const { data: rows, error } = await query
+                return query
+            },
+            false
+        )
         if (error || !rows || rows.length === 0) break
 
         const summaries: CardSummary[] = (rows as CardRow[]).map(row => ({
