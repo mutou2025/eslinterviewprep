@@ -1,13 +1,51 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f8fa;
-  --foreground: #1f2328;
+  --background: #f8fafc;
   --card: #ffffff;
-  --muted: #57606a;
-  --border: #d0d7de;
-  --accent: #0969da;
-  --success: #1a7f37;
+  --section-bg: #f1f5f9;
+  --sidebar-bg: #f9fbff;
+
+  --foreground: #0f172a;
+  --text-secondary: #475569;
+  --muted: #94a3b8;
+  --text-disabled: #cbd5e1;
+
+  --border: #cbd5e1;
+  --border-light: #e2e8f0;
+
+  --brand-blue: #2563eb;
+  --brand-navy: #0b1f3b;
+  --pass-green: #10b981;
+
+  --accent: #2563eb;
+  --success: #10b981;
+
+  --btn-primary-default: #2563eb;
+  --btn-primary-hover: #1d4ed8;
+  --btn-primary-active: #1e40af;
+  --btn-primary-text: #ffffff;
+
+  --btn-success-default: #10b981;
+  --btn-success-hover: #059669;
+  --btn-success-text: #ffffff;
+
+  --btn-secondary-bg: #f1f5f9;
+  --btn-secondary-text: #0f172a;
+
+  --srs-again: #ef4444;
+  --srs-hard: #f59e0b;
+  --srs-good: #2563eb;
+  --srs-easy: #10b981;
+
+  --hero-gradient: linear-gradient(135deg, #0b1f3b 0%, #2563eb 100%);
+  --accent-gradient: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+
+  --chart-new: #cbd5e1;
+  --chart-learning: #60a5fa;
+  --chart-review: #2563eb;
+  --chart-mastered: #10b981;
+  --chart-overdue: #ef4444;
 }
 
 @theme inline {
@@ -15,18 +53,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0d1117;
-    --foreground: #e6edf3;
-    --card: #161b22;
-    --muted: #8b949e;
-    --border: #30363d;
-    --accent: #2f81f7;
-    --success: #3fb950;
-  }
 }
 
 body {
@@ -49,4 +75,31 @@ body {
 .gh-focus {
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.btn-primary {
+  background: var(--btn-primary-default);
+  color: var(--btn-primary-text);
+}
+
+.btn-primary:hover {
+  background: var(--btn-primary-hover);
+}
+
+.btn-primary:active {
+  background: var(--btn-primary-active);
+}
+
+.btn-success {
+  background: var(--btn-success-default);
+  color: var(--btn-success-text);
+}
+
+.btn-success:hover {
+  background: var(--btn-success-hover);
+}
+
+.btn-secondary {
+  background: var(--btn-secondary-bg);
+  color: var(--btn-secondary-text);
 }

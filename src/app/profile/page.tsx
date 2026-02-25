@@ -126,78 +126,78 @@ export default function ProfilePage() {
         <div className="p-8">
             <div className="max-w-3xl mx-auto space-y-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">个人中心</h1>
-                    <p className="text-gray-500 mt-1">账号信息、订阅状态与偏好设置</p>
+                    <h1 className="text-2xl font-bold text-[#0F172A]">个人中心</h1>
+                    <p className="text-[#94A3B8] mt-1">账号信息、订阅状态与偏好设置</p>
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">账号信息</h2>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#CBD5E1]">
+                    <h2 className="text-lg font-semibold text-[#0F172A] mb-4">账号信息</h2>
                     {loading ? (
-                        <p className="text-gray-500">加载中...</p>
+                        <p className="text-[#94A3B8]">加载中...</p>
                     ) : profile ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-[#475569]">
                             <div>
-                                <div className="text-gray-500">昵称</div>
-                                <div className="font-medium text-gray-900">{displayName}</div>
+                                <div className="text-[#94A3B8]">昵称</div>
+                                <div className="font-medium text-[#0F172A]">{displayName}</div>
                             </div>
                             <div>
-                                <div className="text-gray-500">头像</div>
-                                <div className="font-medium text-gray-900">{profile.avatarUrl ?? '未设置'}</div>
+                                <div className="text-[#94A3B8]">头像</div>
+                                <div className="font-medium text-[#0F172A]">{profile.avatarUrl ?? '未设置'}</div>
                             </div>
                             <div>
-                                <div className="text-gray-500">邮箱</div>
-                                <div className="font-medium text-gray-900">{profile.email ?? '未绑定'}</div>
+                                <div className="text-[#94A3B8]">邮箱</div>
+                                <div className="font-medium text-[#0F172A]">{profile.email ?? '未绑定'}</div>
                             </div>
                             <div>
-                                <div className="text-gray-500">用户 ID</div>
-                                <div className="font-mono text-xs text-gray-700 break-all">{profile.id}</div>
+                                <div className="text-[#94A3B8]">用户 ID</div>
+                                <div className="font-mono text-xs text-[#475569] break-all">{profile.id}</div>
                             </div>
                             <div>
-                                <div className="text-gray-500">角色</div>
-                                <div className="font-medium text-gray-900">{profile.role ?? 'user'}</div>
+                                <div className="text-[#94A3B8]">角色</div>
+                                <div className="font-medium text-[#0F172A]">{profile.role ?? 'user'}</div>
                             </div>
                         </div>
                     ) : (
-                        <p className="text-gray-500">未登录</p>
+                        <p className="text-[#94A3B8]">未登录</p>
                     )}
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">订阅状态</h2>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#CBD5E1]">
+                    <h2 className="text-lg font-semibold text-[#0F172A] mb-4">订阅状态</h2>
                     {loading ? (
-                        <p className="text-gray-500">加载中...</p>
+                        <p className="text-[#94A3B8]">加载中...</p>
                     ) : subscription ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-700">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-[#475569]">
                             <div>
-                                <div className="text-gray-500">状态</div>
-                                <div className="font-medium text-gray-900">{subscription.status ?? 'unknown'}</div>
+                                <div className="text-[#94A3B8]">状态</div>
+                                <div className="font-medium text-[#0F172A]">{subscription.status ?? 'unknown'}</div>
                             </div>
                             <div>
-                                <div className="text-gray-500">方案</div>
-                                <div className="font-medium text-gray-900">{subscription.plan ?? 'free'}</div>
+                                <div className="text-[#94A3B8]">方案</div>
+                                <div className="font-medium text-[#0F172A]">{subscription.plan ?? 'free'}</div>
                             </div>
                             <div>
-                                <div className="text-gray-500">到期</div>
-                                <div className="font-medium text-gray-900">{subscription.current_period_end ?? '—'}</div>
+                                <div className="text-[#94A3B8]">到期</div>
+                                <div className="font-medium text-[#0F172A]">{subscription.current_period_end ?? '—'}</div>
                             </div>
                         </div>
                     ) : (
-                        <p className="text-gray-500">暂无订阅记录</p>
+                        <p className="text-[#94A3B8]">暂无订阅记录</p>
                     )}
                 </div>
 
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">偏好设置</h2>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#CBD5E1]">
+                    <h2 className="text-lg font-semibold text-[#0F172A] mb-4">偏好设置</h2>
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="font-medium text-gray-900">默认复习模式</div>
-                                <div className="text-sm text-gray-500">进入复习时默认的模式（多端同步）</div>
+                                <div className="font-medium text-[#0F172A]">默认复习模式</div>
+                                <div className="text-sm text-[#94A3B8]">进入复习时默认的模式（多端同步）</div>
                             </div>
                             <select
                                 value={prefReviewMode}
                                 onChange={(e) => setPrefReviewMode(e.target.value as 'qa' | 'flashcard')}
-                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                                className="px-3 py-2 border border-[#E2E8F0] rounded-lg text-sm"
                             >
                                 <option value="qa">问答模式</option>
                                 <option value="flashcard">速记卡模式</option>
@@ -206,14 +206,14 @@ export default function ProfilePage() {
 
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="font-medium text-gray-900">每日提醒</div>
-                                <div className="text-sm text-gray-500">同步到账号的提醒偏好</div>
+                                <div className="font-medium text-[#0F172A]">每日提醒</div>
+                                <div className="text-sm text-[#94A3B8]">同步到账号的提醒偏好</div>
                             </div>
                             <button
                                 onClick={() => setPrefDailyReminder(!prefDailyReminder)}
                                 className={`px-4 py-2 rounded-lg text-sm transition-colors ${prefDailyReminder
-                                    ? 'bg-blue-600 text-white'
-                                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    ? 'bg-[#2563EB] text-white'
+                                    : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'
                                     }`}
                             >
                                 {prefDailyReminder ? '已开启' : '已关闭'}
@@ -222,13 +222,13 @@ export default function ProfilePage() {
 
                         <div className="flex items-center justify-between">
                             <div>
-                                <div className="font-medium text-gray-900">界面语言</div>
-                                <div className="text-sm text-gray-500">同步到账号的语言偏好</div>
+                                <div className="font-medium text-[#0F172A]">界面语言</div>
+                                <div className="text-sm text-[#94A3B8]">同步到账号的语言偏好</div>
                             </div>
                             <select
                                 value={prefLanguage}
                                 onChange={(e) => setPrefLanguage(e.target.value as 'zh-CN' | 'en-US')}
-                                className="px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                                className="px-3 py-2 border border-[#E2E8F0] rounded-lg text-sm"
                             >
                                 <option value="zh-CN">简体中文</option>
                                 <option value="en-US">English</option>

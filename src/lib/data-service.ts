@@ -1,11 +1,11 @@
 import type { Card, CardList, Category, MasteryStatus, UpstreamSource } from '@/types'
 import { getSupabaseClient } from './supabase-client'
+import type { ContentLanguage } from '@/i18n/types'
 import {
     getCacheMeta,
     setCacheMeta,
     upsertCardSummaries,
     getCachedCardSummariesByCategory,
-    getCachedCardSummariesPage,
     type CardSummary
 } from './card-cache'
 
@@ -17,8 +17,14 @@ type CardRow = {
     category_l2_id: string
     category_l3_id: string
     title: string
+    title_zh: string | null
+    title_en: string | null
     question: string
+    question_zh: string | null
+    question_en: string | null
     answer: string | null
+    answer_zh: string | null
+    answer_en: string | null
     question_type: string
     difficulty: string
     frequency: string
@@ -63,6 +69,50 @@ type CardListRow = {
     updated_at: string | null
 }
 
+type CreateUserCardInput = {
+    title: string
+    titleZh?: string
+    titleEn?: string
+    question?: string
+    questionZh?: string
+    questionEn?: string
+    answer: string
+    answerZh?: string
+    answerEn?: string
+    categoryL3Id: string
+    categoryL2Id?: string
+    questionType?: Card['questionType']
+    difficulty?: Card['difficulty']
+    frequency?: Card['frequency']
+    customTags?: string[]
+}
+
+type CardPageApiResponse = {
+    success: boolean
+    cards?: CardRow[]
+    total?: number
+    error?: string
+}
+
+type CardAnswerApiResponse = {
+    success: boolean
+    answer?: string | null
+    answerZh?: string | null
+    answerEn?: string | null
+    error?: string
+}
+
+type TranslationApiResponse = {
+    success: boolean
+    titleEn?: string
+    answerEn?: string
+    generated?: boolean
+    error?: string
+}
+
+const CARD_SELECT_SUMMARY = 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,title_zh,title_en,question,question_zh,question_en,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
+const CARD_SELECT_WITH_ANSWER = `${CARD_SELECT_SUMMARY},answer,answer_zh,answer_en`
+
 function toCard(row: CardRow): Card {
     return {
         id: row.id,
@@ -72,8 +122,14 @@ function toCard(row: CardRow): Card {
         categoryL2Id: row.category_l2_id,
         categoryL3Id: row.category_l3_id,
         title: row.title,
+        titleZh: row.title_zh || undefined,
+        titleEn: row.title_en || undefined,
         question: row.question,
+        questionZh: row.question_zh || undefined,
+        questionEn: row.question_en || undefined,
         answer: row.answer || undefined,
+        answerZh: row.answer_zh || undefined,
+        answerEn: row.answer_en || undefined,
         questionType: row.question_type as Card['questionType'],
         difficulty: row.difficulty as Card['difficulty'],
         frequency: row.frequency as Card['frequency'],
@@ -121,6 +177,47 @@ async function getUserId(): Promise<string | null> {
     const { data, error } = await supabase.auth.getUser()
     if (error || !data.user) return null
     return data.user.id
+}
+
+async function getAccessToken(): Promise<string | null> {
+    const supabase = getSupabaseClient()
+    const { data, error } = await supabase.auth.getSession()
+    if (error) return null
+    return data.session?.access_token ?? null
+}
+
+export async function generateInterviewEnglishDraft(input: {
+    title: string
+    answer: string
+}): Promise<{ titleEn: string; answerEn: string; generated: boolean }> {
+    const token = await getAccessToken()
+    if (!token) {
+        return { titleEn: input.title, answerEn: input.answer, generated: false }
+    }
+
+    const response = await fetch('/api/translate/interview-draft', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(input)
+    })
+
+    if (!response.ok) {
+        return { titleEn: input.title, answerEn: input.answer, generated: false }
+    }
+
+    const payload = await response.json() as TranslationApiResponse
+    if (!payload.success) {
+        return { titleEn: input.title, answerEn: input.answer, generated: false }
+    }
+
+    return {
+        titleEn: (payload.titleEn || input.title).trim(),
+        answerEn: (payload.answerEn || input.answer).trim(),
+        generated: payload.generated === true
+    }
 }
 
 export async function initializeDefaultData(): Promise<void> {
@@ -183,9 +280,7 @@ async function getAllCardsWithOverridesInternal(options: { includeAnswer: boolea
     const supabase = getSupabaseClient()
     const userId = await getUserId()
 
-    const selectColumns = options.includeAnswer
-        ? 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,answer,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
-        : 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
+    const selectColumns = options.includeAnswer ? CARD_SELECT_WITH_ANSWER : CARD_SELECT_SUMMARY
 
     const { data: cardRows, error: cardsError } = await supabase
         .from('cards')
@@ -223,44 +318,52 @@ export async function getCardSummariesPage(options: {
     categoryL3Id?: string
     categoryL3Ids?: string[]
 }): Promise<{ cards: Card[]; total: number }> {
-    const supabase = getSupabaseClient()
-    const userId = await getUserId()
-
-    const from = (options.page - 1) * options.pageSize
-    const to = from + options.pageSize - 1
-
-    const selectColumns = 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
-
-    let query = supabase.from('cards').select(selectColumns, { count: 'exact' })
-
-    if (options.search && options.search.trim()) {
-        const q = options.search.trim()
-        query = query.or(`title.ilike.%${q}%,question.ilike.%${q}%`)
-    }
-
-    if (options.categoryL3Id && options.categoryL3Id.trim()) {
-        query = query.eq('category_l3_id', options.categoryL3Id.trim())
-    } else if (options.categoryL3Ids) {
-        if (options.categoryL3Ids.length === 0) {
-            return { cards: [], total: 0 }
-        }
-        query = query.in('category_l3_id', options.categoryL3Ids)
-    }
-
-    const { data: cardRows, error: cardsError, count } = await query
-        .order('id')
-        .range(from, to)
-
-    if (cardsError || !cardRows) {
-        console.error('Failed to load cards:', cardsError)
+    if (!options.categoryL3Id && options.categoryL3Ids && options.categoryL3Ids.length === 0) {
         return { cards: [], total: 0 }
     }
 
-    const cards = (cardRows as CardRow[]).map(toCard)
+    const token = await getAccessToken()
+    if (!token) return { cards: [], total: 0 }
+
+    const userId = await getUserId()
+    const params = new URLSearchParams()
+    params.set('page', String(options.page))
+    params.set('pageSize', String(options.pageSize))
+    if (options.search && options.search.trim()) {
+        params.set('search', options.search.trim())
+    }
+    if (options.categoryL3Id && options.categoryL3Id.trim()) {
+        params.set('categoryL3Id', options.categoryL3Id.trim())
+    }
+    if (options.categoryL3Ids && options.categoryL3Ids.length > 0) {
+        params.set('categoryL3Ids', options.categoryL3Ids.join(','))
+    }
+
+    const response = await fetch(`/api/library/cards?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+
+    if (!response.ok) {
+        const text = await response.text()
+        console.error('Failed to load cards from API:', response.status, text)
+        return { cards: [], total: 0 }
+    }
+
+    const payload = await response.json() as CardPageApiResponse
+    if (!payload.success || !payload.cards) {
+        console.error('Failed to load cards from API:', payload.error)
+        return { cards: [], total: 0 }
+    }
+
+    const cards = payload.cards.map(toCard)
 
     if (!userId || cards.length === 0) {
-        return { cards, total: count || cards.length }
+        return { cards, total: payload.total || cards.length }
     }
+
+    const supabase = getSupabaseClient()
 
     const cardIds = cards.map(c => c.id)
     const { data: overrideRows } = await supabase
@@ -270,7 +373,7 @@ export async function getCardSummariesPage(options: {
         .in('card_id', cardIds)
 
     const overrideMap = new Map((overrideRows as OverrideRow[] | null || []).map(row => [row.card_id, row]))
-    return { cards: cards.map(card => applyOverride(card, overrideMap.get(card.id))), total: count || cards.length }
+    return { cards: cards.map(card => applyOverride(card, overrideMap.get(card.id))), total: payload.total || cards.length }
 }
 
 export async function getCardSummariesPageCached(options: {
@@ -280,14 +383,7 @@ export async function getCardSummariesPageCached(options: {
     categoryL3Id?: string
     categoryL3Ids?: string[]
 }): Promise<{ cards: Card[]; total: number }> {
-    await syncCardSummaryCache()
-    const cached = await getCachedCardSummariesPage(options)
-    const overrides = await getOverridesByIds(cached.cards.map(card => card.id))
-    const cards = applyOverridesToCards(
-        cached.cards.map(toCardFromCache),
-        overrides
-    )
-    return { cards, total: cached.total }
+    return getCardSummariesPage(options)
 }
 
 export async function getCardSolvedCountCached(options: {
@@ -300,8 +396,6 @@ export async function getCardSolvedCountCached(options: {
 }
 
 export async function getSolvedCardIdsCached(): Promise<Set<string>> {
-    await syncCardSummaryCache()
-
     const supabase = getSupabaseClient()
     const userId = await getUserId()
     if (!userId) return new Set()
@@ -364,45 +458,13 @@ export async function getCardSolvedProgressCached(options: {
     return { solved, total }
 }
 
-function toCardFromCache(summary: CardSummary): Card {
-    return {
-        id: summary.id,
-        source: summary.source as Card['source'],
-        upstreamSource: summary.upstreamSource || undefined,
-        categoryL1Id: summary.categoryL1Id,
-        categoryL2Id: summary.categoryL2Id,
-        categoryL3Id: summary.categoryL3Id,
-        title: summary.title,
-        question: summary.question,
-        answer: undefined,
-        questionType: summary.questionType as Card['questionType'],
-        difficulty: summary.difficulty as Card['difficulty'],
-        frequency: summary.frequency as Card['frequency'],
-        customTags: summary.customTags || [],
-        codeTemplate: undefined,
-        testCases: undefined,
-        entryFunctionName: undefined,
-        supportedLanguages: undefined,
-        mastery: 'new',
-        reviewCount: 0,
-        intervalDays: 0,
-        dueAt: new Date(),
-        lastReviewedAt: undefined,
-        lastSubmissionCode: undefined,
-        passRate: undefined,
-        originUpstreamId: summary.originUpstreamId || undefined,
-        createdAt: summary.createdAt instanceof Date ? summary.createdAt : new Date(summary.createdAt),
-        updatedAt: summary.updatedAt instanceof Date ? summary.updatedAt : new Date(summary.updatedAt)
-    }
-}
-
 export async function getCardWithOverride(cardId: string): Promise<Card | undefined> {
     const supabase = getSupabaseClient()
     const userId = await getUserId()
 
     const { data: cardRow, error } = await supabase
         .from('cards')
-        .select('id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,answer,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at')
+        .select(CARD_SELECT_WITH_ANSWER)
         .eq('id', cardId)
         .maybeSingle()
 
@@ -428,7 +490,7 @@ export async function getCardSummary(cardId: string): Promise<Card | undefined> 
 
     const { data: cardRow, error } = await supabase
         .from('cards')
-        .select('id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at')
+        .select(CARD_SELECT_SUMMARY)
         .eq('id', cardId)
         .maybeSingle()
 
@@ -448,16 +510,36 @@ export async function getCardSummary(cardId: string): Promise<Card | undefined> 
     return applyOverride(card, overrideRow as OverrideRow | null)
 }
 
-export async function getCardAnswer(cardId: string): Promise<string | null> {
-    const supabase = getSupabaseClient()
-    const { data, error } = await supabase
-        .from('cards')
-        .select('answer')
-        .eq('id', cardId)
-        .maybeSingle()
+export async function getCardAnswer(cardId: string, language: ContentLanguage = 'zh-CN'): Promise<string | null> {
+    const token = await getAccessToken()
+    if (!token) return null
 
-    if (error || !data) return null
-    return (data as { answer: string | null }).answer
+    const params = new URLSearchParams()
+    params.set('cardId', cardId)
+    params.set('language', language)
+
+    const response = await fetch(`/api/library/answer?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+
+    if (!response.ok) {
+        const text = await response.text()
+        console.error('Failed to load card answer from API:', response.status, text)
+        return null
+    }
+
+    const payload = await response.json() as CardAnswerApiResponse
+    if (!payload.success) {
+        console.error('Failed to load card answer from API:', payload.error)
+        return null
+    }
+
+    if (language === 'en-US') {
+        return payload.answerEn ?? payload.answer ?? payload.answerZh ?? null
+    }
+    return payload.answerZh ?? payload.answer ?? payload.answerEn ?? null
 }
 
 export async function getOverridesByIds(cardIds: string[]): Promise<OverrideRow[]> {
@@ -481,7 +563,7 @@ export async function getCardsByCategory(categoryL3Id: string): Promise<Card[]> 
 
     const { data: cardRows, error } = await supabase
         .from('cards')
-        .select('id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at')
+        .select(CARD_SELECT_SUMMARY)
         .eq('category_l3_id', categoryL3Id)
 
     if (error || !cardRows) return []
@@ -514,7 +596,7 @@ export async function getCardsByIds(cardIds: string[]): Promise<Card[]> {
 
     const { data: cardRows, error } = await supabase
         .from('cards')
-        .select('id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at')
+        .select(CARD_SELECT_SUMMARY)
         .in('id', cardIds)
 
     if (error || !cardRows) return []
@@ -635,10 +717,10 @@ export async function getDomainStats(): Promise<Map<string, { total: number; sol
     const cards = await getAllCardsWithOverridesInternal({ includeAnswer: false })
     const stats = new Map<string, { total: number; solid: number }>()
     cards.forEach(card => {
-        const entry = stats.get(card.categoryL3Id) || { total: 0, solid: 0 }
+        const entry = stats.get(card.categoryL2Id) || { total: 0, solid: 0 }
         entry.total++
         if (card.mastery === 'solid') entry.solid++
-        stats.set(card.categoryL3Id, entry)
+        stats.set(card.categoryL2Id, entry)
     })
     return stats
 }
@@ -654,7 +736,7 @@ export async function getReviewCards(scope: string, limit: number): Promise<Card
         const supabase = getSupabaseClient()
         const { data: cardRows, error } = await supabase
             .from('cards')
-            .select('id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at')
+            .select(CARD_SELECT_SUMMARY)
             .eq('category_l3_id', categoryId)
             .limit(limit)
 
@@ -684,7 +766,7 @@ export async function getReviewCards(scope: string, limit: number): Promise<Card
     const remaining = limit - cards.length
     const { data: extraRows } = await supabase
         .from('cards')
-        .select('id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at')
+        .select(CARD_SELECT_SUMMARY)
         .limit(remaining)
 
     const extraCards = (extraRows as CardRow[] | null || []).map(toCard)
@@ -704,7 +786,7 @@ export async function syncCardSummaryCache(): Promise<void> {
 
         let query = supabase
             .from('cards')
-            .select('id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at')
+            .select(CARD_SELECT_SUMMARY)
             .order('updated_at', { ascending: true })
             .range(from, to)
 
@@ -851,6 +933,103 @@ export async function createList(name: string, cardIds: string[] = [], isDefault
         createdAt: row.created_at ? new Date(row.created_at) : new Date(),
         updatedAt: row.updated_at ? new Date(row.updated_at) : new Date()
     }
+}
+
+export async function createUserCard(input: CreateUserCardInput): Promise<Card | null> {
+    const supabase = getSupabaseClient()
+    const cardId = `user-${crypto.randomUUID()}`
+    const nowIso = new Date().toISOString()
+    const normalizedTitle = input.title.trim()
+    const normalizedQuestion = (input.question || input.title).trim()
+    const normalizedAnswer = input.answer.trim()
+    const normalizedTitleZh = (input.titleZh || normalizedTitle).trim()
+    const normalizedTitleEn = (input.titleEn || normalizedTitle).trim()
+    const normalizedQuestionZh = (input.questionZh || normalizedQuestion).trim()
+    const normalizedQuestionEn = (input.questionEn || normalizedQuestion).trim()
+    const normalizedAnswerZh = (input.answerZh || normalizedAnswer).trim()
+    const normalizedAnswerEn = (input.answerEn || normalizedAnswer).trim()
+
+    const payload = {
+        id: cardId,
+        source: 'user',
+        upstream_source: null,
+        category_l1_id: 'technical',
+        category_l2_id: input.categoryL2Id || 'web-frontend',
+        category_l3_id: input.categoryL3Id,
+        title: normalizedTitle,
+        title_zh: normalizedTitleZh,
+        title_en: normalizedTitleEn,
+        question: normalizedQuestion,
+        question_zh: normalizedQuestionZh,
+        question_en: normalizedQuestionEn,
+        answer: normalizedAnswer,
+        answer_zh: normalizedAnswerZh,
+        answer_en: normalizedAnswerEn,
+        question_type: input.questionType || 'concept',
+        difficulty: input.difficulty || 'must-know',
+        frequency: input.frequency || 'mid',
+        custom_tags: input.customTags || [],
+        origin_upstream_id: null,
+        created_at: nowIso,
+        updated_at: nowIso
+    }
+
+    const { data, error } = await supabase
+        .from('cards')
+        .insert(payload)
+        .select(CARD_SELECT_WITH_ANSWER)
+        .single()
+
+    if (error || !data) {
+        console.error('Failed to create user card:', error)
+        return null
+    }
+
+    return toCard(data as CardRow)
+}
+
+export async function updateUserCardContent(
+    cardId: string,
+    updates: {
+        titleZh?: string
+        titleEn?: string
+        questionZh?: string
+        questionEn?: string
+        answerZh?: string
+        answerEn?: string
+    }
+): Promise<Card | null> {
+    const supabase = getSupabaseClient()
+
+    const payload: Record<string, string> = {}
+    if (typeof updates.titleZh === 'string') payload.title_zh = updates.titleZh.trim()
+    if (typeof updates.titleEn === 'string') payload.title_en = updates.titleEn.trim()
+    if (typeof updates.questionZh === 'string') payload.question_zh = updates.questionZh.trim()
+    if (typeof updates.questionEn === 'string') payload.question_en = updates.questionEn.trim()
+    if (typeof updates.answerZh === 'string') payload.answer_zh = updates.answerZh.trim()
+    if (typeof updates.answerEn === 'string') payload.answer_en = updates.answerEn.trim()
+
+    if (Object.keys(payload).length === 0) return null
+
+    if (payload.title_zh) payload.title = payload.title_zh
+    if (payload.question_zh) payload.question = payload.question_zh
+    if (payload.answer_zh) payload.answer = payload.answer_zh
+    payload.updated_at = new Date().toISOString()
+
+    const { data, error } = await supabase
+        .from('cards')
+        .update(payload)
+        .eq('id', cardId)
+        .eq('source', 'user')
+        .select(CARD_SELECT_WITH_ANSWER)
+        .maybeSingle()
+
+    if (error || !data) {
+        console.error('Failed to update user card:', error)
+        return null
+    }
+
+    return toCard(data as CardRow)
 }
 
 export async function updateList(listId: string, updates: { name?: string; cardIds?: string[] }): Promise<void> {

@@ -20,23 +20,25 @@ interface FlashcardProps {
 }
 
 const masteryConfig: Record<MasteryStatus, { labelKey: 'mastery.new' | 'mastery.fuzzy' | 'mastery.canExplain' | 'mastery.solid'; color: string; bg: string }> = {
-    'new': { labelKey: 'mastery.new', color: 'text-gray-600', bg: 'bg-gray-100 hover:bg-gray-200' },
-    'fuzzy': { labelKey: 'mastery.fuzzy', color: 'text-orange-600', bg: 'bg-orange-100 hover:bg-orange-200' },
-    'can-explain': { labelKey: 'mastery.canExplain', color: 'text-blue-600', bg: 'bg-blue-100 hover:bg-blue-200' },
-    'solid': { labelKey: 'mastery.solid', color: 'text-green-600', bg: 'bg-green-100 hover:bg-green-200' }
+    'new': { labelKey: 'mastery.new', color: 'text-[#EF4444]', bg: 'bg-[#FEE2E2] hover:bg-[#FECACA]' },
+    'fuzzy': { labelKey: 'mastery.fuzzy', color: 'text-[#F59E0B]', bg: 'bg-[#FEF3C7] hover:bg-[#FDE68A]' },
+    'can-explain': { labelKey: 'mastery.canExplain', color: 'text-[#2563EB]', bg: 'bg-[#DBEAFE] hover:bg-[#BFDBFE]' },
+    'solid': { labelKey: 'mastery.solid', color: 'text-[#10B981]', bg: 'bg-[#D1FAE5] hover:bg-[#A7F3D0]' }
 }
+
 
 const difficultyConfig: Record<string, { labelKey: 'difficulty.easy' | 'difficulty.mustKnow' | 'difficulty.hard' | 'difficulty.handWrite'; color: string }> = {
     'easy': { labelKey: 'difficulty.easy', color: 'bg-green-100 text-green-700' },
     'must-know': { labelKey: 'difficulty.mustKnow', color: 'bg-red-100 text-red-700' },
-    'hard': { labelKey: 'difficulty.hard', color: 'bg-blue-100 text-blue-700' },
+    'hard': { labelKey: 'difficulty.hard', color: 'bg-[#DBEAFE] text-[#1D4ED8]' },
     'hand-write': { labelKey: 'difficulty.handWrite', color: 'bg-yellow-100 text-yellow-700' }
+
 }
 
 const frequencyConfig: Record<string, { labelKey: 'frequency.high' | 'frequency.mid' | 'frequency.low'; color: string }> = {
     'high': { labelKey: 'frequency.high', color: 'bg-red-50 text-red-600' },
     'mid': { labelKey: 'frequency.mid', color: 'bg-yellow-50 text-yellow-600' },
-    'low': { labelKey: 'frequency.low', color: 'bg-gray-50 text-gray-600' }
+    'low': { labelKey: 'frequency.low', color: 'bg-[#F8FAFC] text-[#475569]' }
 }
 
 export function Flashcard({
@@ -95,21 +97,21 @@ export function Flashcard({
                         <div className="bg-white rounded-3xl shadow-lg min-h-[400px] flex flex-col">
                             {/* 标签区域 */}
                             {showTags && (
-                                <div className="flex flex-wrap gap-2 p-4 border-b border-gray-100">
+                                <div className="flex flex-wrap gap-2 p-4 border-b border-[#E2E8F0]">
                                     {/* 分类 */}
-                                    <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-700 rounded-full">
+                                    <span className="px-2 py-1 text-xs font-medium bg-[#DBEAFE] text-[#1D4ED8] rounded-full">
                                         {card.categoryL3Id}
                                     </span>
                                     {/* 题型 */}
-                                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full">
+                                    <span className="px-2 py-1 text-xs font-medium bg-[#F1F5F9] text-[#475569] rounded-full">
                                         {card.questionType}
                                     </span>
                                     {/* 频率 */}
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${frequencyConfig[card.frequency]?.color || 'bg-gray-100'}`}>
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${frequencyConfig[card.frequency]?.color || 'bg-[#F1F5F9]'}`}>
                                         {frequencyConfig[card.frequency] ? t(frequencyConfig[card.frequency].labelKey) : card.frequency}
                                     </span>
                                     {/* 难度 */}
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${difficultyConfig[card.difficulty]?.color || 'bg-gray-100'}`}>
+                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${difficultyConfig[card.difficulty]?.color || 'bg-[#F1F5F9]'}`}>
                                         {difficultyConfig[card.difficulty] ? t(difficultyConfig[card.difficulty].labelKey) : card.difficulty}
                                     </span>
                                 </div>
@@ -117,10 +119,10 @@ export function Flashcard({
 
                             {/* 题目内容 */}
                             <div className="flex-1 flex flex-col items-center justify-center p-8">
-                                <h2 className="text-lg font-semibold text-gray-500 mb-4">
+                                <h2 className="text-lg font-semibold text-[#94A3B8] mb-4">
                                     「{localized.title}」
                                 </h2>
-                                <div className="text-xl text-gray-800 text-center prose prose-lg max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+                                <div className="text-xl text-[#0F172A] text-center prose prose-lg max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-[#2563EB] prose-code:bg-[#EFF6FF] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
                                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
                                         {localized.question}
                                     </ReactMarkdown>
@@ -128,7 +130,7 @@ export function Flashcard({
                             </div>
 
                             {/* 底部提示条 */}
-                            <div className="bg-[#303545] text-white text-center py-3 rounded-b-3xl flex items-center justify-center gap-2">
+                            <div className="bg-[#0B1F3B] text-white text-center py-3 rounded-b-3xl flex items-center justify-center gap-2">
                                 <span className="text-sm">{t('flashcard.clickToFlip')}</span>
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
@@ -147,8 +149,8 @@ export function Flashcard({
                     >
                         <div className="bg-white rounded-3xl shadow-lg min-h-[400px] max-h-[80vh] flex flex-col">
                             {/* 答案标题 */}
-                            <div className="p-4 border-b border-gray-100 flex-shrink-0">
-                                <h3 className="text-sm font-medium text-gray-500">{t('flashcard.answer')}</h3>
+                            <div className="p-4 border-b border-[#E2E8F0] flex-shrink-0">
+                                <h3 className="text-sm font-medium text-[#94A3B8]">{t('flashcard.answer')}</h3>
                             </div>
 
                             {/* 答案内容 - 可滚动 */}
@@ -157,9 +159,9 @@ export function Flashcard({
                                 className="flex-1 overflow-auto p-6"
                                 onClick={(e) => e.stopPropagation()}
                             >
-                                <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-img:shadow-md">
+                                <div className="prose prose-sm max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:overflow-x-auto prose-code:text-[#2563EB] prose-code:bg-[#EFF6FF] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none prose-img:rounded-lg prose-img:shadow-md">
                                     {isAnswerLoading ? (
-                                        <p className="text-sm text-gray-400">{t('flashcard.answerLoading')}</p>
+                                        <p className="text-sm text-[#94A3B8]">{t('flashcard.answerLoading')}</p>
                                     ) : (
                                         <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
                                             {localized.answer || t('flashcard.noAnswer')}
@@ -169,7 +171,7 @@ export function Flashcard({
                             </div>
 
                             {/* 掌握度按钮 */}
-                            <div className="p-4 border-t border-gray-100 flex-shrink-0">
+                            <div className="p-4 border-t border-[#E2E8F0] flex-shrink-0">
                                 <div className="flex gap-2 justify-center">
                                     {(Object.entries(masteryConfig) as [MasteryStatus, typeof masteryConfig[MasteryStatus]][]).map(([key, config]) => (
                                         <button
@@ -184,7 +186,7 @@ export function Flashcard({
                                         </button>
                                     ))}
                                 </div>
-                                <p className="text-xs text-gray-400 text-center mt-2">
+                                <p className="text-xs text-[#94A3B8] text-center mt-2">
                                     {t('flashcard.shortcuts')}
                                 </p>
                             </div>

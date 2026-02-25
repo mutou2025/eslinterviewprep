@@ -49,8 +49,14 @@ create table if not exists public.cards (
     category_l2_id text not null,
     category_l3_id text not null,
     title text not null,
+    title_zh text,
+    title_en text,
     question text not null,
+    question_zh text,
+    question_en text,
     answer text,
+    answer_zh text,
+    answer_en text,
     question_type text not null,
     difficulty text not null,
     frequency text not null,
@@ -70,8 +76,14 @@ alter table public.cards add column if not exists category_l1_id text;
 alter table public.cards add column if not exists category_l2_id text;
 alter table public.cards add column if not exists category_l3_id text;
 alter table public.cards add column if not exists title text;
+alter table public.cards add column if not exists title_zh text;
+alter table public.cards add column if not exists title_en text;
 alter table public.cards add column if not exists question text;
+alter table public.cards add column if not exists question_zh text;
+alter table public.cards add column if not exists question_en text;
 alter table public.cards add column if not exists answer text;
+alter table public.cards add column if not exists answer_zh text;
+alter table public.cards add column if not exists answer_en text;
 alter table public.cards add column if not exists question_type text;
 alter table public.cards add column if not exists difficulty text;
 alter table public.cards add column if not exists frequency text;
@@ -235,8 +247,9 @@ for insert with check (auth.uid() = id);
 
 -- Categories policies
 drop policy if exists "Categories: public read" on public.categories;
-create policy "Categories: public read" on public.categories
-for select using (true);
+drop policy if exists "Categories: authenticated read" on public.categories;
+create policy "Categories: authenticated read" on public.categories
+for select using (auth.role() = 'authenticated');
 
 drop policy if exists "Categories: admin write" on public.categories;
 create policy "Categories: admin write" on public.categories
@@ -244,8 +257,9 @@ for all using (public.is_admin()) with check (public.is_admin());
 
 -- Cards policies
 drop policy if exists "Cards: public read" on public.cards;
-create policy "Cards: public read" on public.cards
-for select using (true);
+drop policy if exists "Cards: authenticated read" on public.cards;
+create policy "Cards: authenticated read" on public.cards
+for select using (auth.role() = 'authenticated');
 
 drop policy if exists "Cards: admin write" on public.cards;
 create policy "Cards: admin write" on public.cards

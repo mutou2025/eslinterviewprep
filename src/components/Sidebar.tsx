@@ -7,11 +7,11 @@ import { useEffect, useMemo, useState } from 'react'
 import {
     LayoutDashboard,
     Library,
-    ListChecks,
     PlayCircle,
     Factory,
     Building2,
     type LucideIcon
+
 } from 'lucide-react'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { useI18n } from '@/i18n/provider'
@@ -25,7 +25,6 @@ const navItems: Array<{ href: string; labelKey: MessageKey; icon: LucideIcon }> 
     { href: '/library', labelKey: 'sidebar.questionBank', icon: Library },
     { href: '/behavior-interview', labelKey: 'sidebar.behaviorInterviews', icon: Factory },
     { href: '/company-interviews', labelKey: 'sidebar.topCompanyInterviews', icon: Building2 },
-    { href: '/lists', labelKey: 'sidebar.myLists', icon: ListChecks },
 ]
 
 export function Sidebar() {
@@ -67,7 +66,7 @@ export function Sidebar() {
     if (isLoginPage) return null
 
     return (
-        <header className="relative z-50 bg-white/95 backdrop-blur border-b border-[#d0d7de]">
+        <header className="relative z-50 bg-white/95 backdrop-blur border-b border-[#CBD5E1]">
             <div className="px-4 py-4">
                 <div className="flex items-center gap-4">
                     {/* Brand */}
@@ -83,8 +82,8 @@ export function Sidebar() {
                             />
                         </div>
                         <div className="min-w-0">
-                            <h1 className="font-bold text-[18px] leading-tight tracking-[0.08em] text-[#1f2328]">北美面试通</h1>
-                            <p className="text-[13px] leading-none tracking-[0.08em] text-[#57606a]">ESLInterviewPrep</p>
+                            <h1 className="font-bold text-[18px] leading-tight tracking-[0.08em] text-[#0F172A]">北美面试通</h1>
+                            <p className="text-[13px] leading-none tracking-[0.08em] text-[#475569]">ESLInterviewPrep</p>
                         </div>
                     </Link>
 
@@ -102,23 +101,23 @@ export function Sidebar() {
                                             <Link
                                                 href={libraryDefaultHref}
                                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors border text-sm ${isActive
-                                                    ? 'bg-[#ddf4ff] text-[#0969da] border-[#54aeff66]'
-                                                    : 'text-[#57606a] border-transparent hover:bg-[#f6f8fa] hover:text-[#1f2328]'
+                                                    ? 'bg-[#DBEAFE] text-[#2563EB] border-[#93C5FD66]'
+                                                    : 'text-[#475569] border-transparent hover:bg-[#F8FAFC] hover:text-[#0F172A]'
                                                     }`}
                                             >
                                                 <Icon size={18} />
                                                 <span className="font-medium">{t(item.labelKey)}</span>
                                             </Link>
 
-                                            <div className="pointer-events-none absolute left-0 top-full z-[120] pt-2 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-                                                <div className="min-w-[220px] rounded-xl border border-[#d0d7de] bg-white p-2 shadow-lg">
+                                            <div className="pointer-events-none absolute left-0 top-full z-[120] pt-2 opacity-0 transition-opacity group-hover:pointer-events-auto group-hover:opacity-100">
+                                                <div className="min-w-[220px] rounded-xl border border-[#CBD5E1] bg-white p-2 shadow-lg">
                                                     {TECHNICAL_TRACKS.map(track => (
                                                         <Link
                                                             key={track.id}
                                                             href={`/library?track=${track.id}`}
                                                             className={`block rounded-lg px-3 py-2 text-sm transition-colors ${selectedTrack === track.id
-                                                                ? 'bg-[#ddf4ff] text-[#0969da]'
-                                                                : 'text-[#24292f] hover:bg-[#f6f8fa] active:bg-[#f6f8fa]'
+                                                                ? 'bg-[#DBEAFE] text-[#2563EB]'
+                                                                : 'text-[#0F172A] hover:bg-[#F8FAFC] active:bg-[#F8FAFC]'
                                                                 }`}
                                                             aria-current={selectedTrack === track.id ? 'page' : undefined}
                                                         >
@@ -136,8 +135,8 @@ export function Sidebar() {
                                         <Link
                                             href={item.href}
                                             className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors border text-sm ${isActive
-                                                ? 'bg-[#ddf4ff] text-[#0969da] border-[#54aeff66]'
-                                                : 'text-[#57606a] border-transparent hover:bg-[#f6f8fa] hover:text-[#1f2328]'
+                                                ? 'bg-[#DBEAFE] text-[#2563EB] border-[#93C5FD66]'
+                                                : 'text-[#475569] border-transparent hover:bg-[#F8FAFC] hover:text-[#0F172A]'
                                                 }`}
                                         >
                                             <Icon size={18} />
@@ -154,20 +153,34 @@ export function Sidebar() {
                         <LanguageSwitcher />
                         <button
                             onClick={() => setMenuOpen(!menuOpen)}
-                            className="p-1 rounded-xl hover:bg-[#f6f8fa] transition-colors"
+                            className="p-1 rounded-xl hover:bg-[#F8FAFC] transition-colors"
                             title={t('sidebar.profile')}
                             aria-label={t('sidebar.profile')}
                         >
-                            <div className="w-9 h-9 rounded-full bg-[#0969da] text-white flex items-center justify-center font-semibold text-sm">
+                            <div className="w-9 h-9 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-semibold text-sm">
                                 {initials}
                             </div>
                         </button>
 
                         {menuOpen && (
-                            <div className="absolute top-12 right-0 w-48 bg-white border border-[#d0d7de] rounded-xl shadow-lg py-2 z-10">
+                            <div className="absolute top-12 right-0 w-52 bg-white border border-[#CBD5E1] rounded-xl shadow-lg py-2 z-10">
+                                <Link
+                                    href="/lists"
+                                    className="block px-4 py-2 text-sm text-[#0F172A] hover:bg-[#F8FAFC]"
+                                    onClick={() => setMenuOpen(false)}
+                                >
+                                    {t('sidebar.myQuestions')}
+                                </Link>
+                                <Link
+                                    href="/data-management"
+                                    className="block px-4 py-2 text-sm text-[#0F172A] hover:bg-[#F8FAFC]"
+                                    onClick={() => setMenuOpen(false)}
+                                >
+                                    {t('sidebar.dataManagement')}
+                                </Link>
                                 <Link
                                     href="/profile"
-                                    className="block px-4 py-2 text-sm text-[#24292f] hover:bg-[#f6f8fa]"
+                                    className="block px-4 py-2 text-sm text-[#0F172A] hover:bg-[#F8FAFC]"
                                     onClick={() => setMenuOpen(false)}
                                 >
                                     {t('sidebar.goProfile')}

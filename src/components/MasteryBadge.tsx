@@ -11,26 +11,26 @@ interface MasteryBadgeProps {
 const masteryConfig: Record<MasteryStatus, { labelKey: 'mastery.new' | 'mastery.fuzzy' | 'mastery.canExplain' | 'mastery.solid'; color: string; bg: string; icon: string }> = {
     'new': {
         labelKey: 'mastery.new',
-        color: 'text-gray-600',
-        bg: 'bg-gray-100',
+        color: 'text-[#475569]',
+        bg: 'bg-[#F1F5F9]',
         icon: '○'
     },
     'fuzzy': {
         labelKey: 'mastery.fuzzy',
-        color: 'text-orange-600',
-        bg: 'bg-orange-100',
+        color: 'text-[#F59E0B]',
+        bg: 'bg-[#FEF3C7]',
         icon: '◐'
     },
     'can-explain': {
         labelKey: 'mastery.canExplain',
-        color: 'text-blue-600',
-        bg: 'bg-blue-100',
+        color: 'text-[#2563EB]',
+        bg: 'bg-[#DBEAFE]',
         icon: '◕'
     },
     'solid': {
         labelKey: 'mastery.solid',
-        color: 'text-green-600',
-        bg: 'bg-green-100',
+        color: 'text-[#10B981]',
+        bg: 'bg-[#D1FAE5]',
         icon: '●'
     }
 }
@@ -64,16 +64,16 @@ export function MasteryProgress({ stats, showLabels = true }: MasteryProgressPro
     if (total === 0) return null
 
     const items: { key: MasteryStatus; width: number; color: string }[] = [
-        { key: 'solid', width: (stats.solid / total) * 100, color: 'bg-green-500' },
-        { key: 'can-explain', width: (stats['can-explain'] / total) * 100, color: 'bg-blue-500' },
-        { key: 'fuzzy', width: (stats.fuzzy / total) * 100, color: 'bg-orange-500' },
-        { key: 'new', width: (stats.new / total) * 100, color: 'bg-gray-300' },
+        { key: 'solid', width: (stats.solid / total) * 100, color: 'bg-[#10B981]' },
+        { key: 'can-explain', width: (stats['can-explain'] / total) * 100, color: 'bg-[#2563EB]' },
+        { key: 'fuzzy', width: (stats.fuzzy / total) * 100, color: 'bg-[#60A5FA]' },
+        { key: 'new', width: (stats.new / total) * 100, color: 'bg-[#CBD5E1]' },
     ]
 
     return (
         <div className="space-y-2">
             {/* 进度条 */}
-            <div className="h-3 bg-gray-200 rounded-full overflow-hidden flex">
+            <div className="h-3 bg-[#E2E8F0] rounded-full overflow-hidden flex">
                 {items.map(item => (
                     item.width > 0 && (
                         <div
@@ -91,8 +91,8 @@ export function MasteryProgress({ stats, showLabels = true }: MasteryProgressPro
                     {(Object.entries(masteryConfig) as [MasteryStatus, typeof masteryConfig[MasteryStatus]][]).map(([key, config]) => (
                         <div key={key} className="flex items-center gap-1">
                             <span className={`w-3 h-3 rounded-full ${config.bg}`} />
-                            <span className="text-gray-600">{t(config.labelKey)}</span>
-                            <span className="text-gray-400">({stats[key] || 0})</span>
+                            <span className="text-[#475569]">{t(config.labelKey)}</span>
+                            <span className="text-[#94A3B8]">({stats[key] || 0})</span>
                         </div>
                     ))}
                 </div>

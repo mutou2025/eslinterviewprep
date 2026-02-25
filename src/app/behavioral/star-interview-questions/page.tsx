@@ -56,39 +56,39 @@ export default function STARInterviewQuestionsPage() {
         <div className="p-8">
             <div className="max-w-4xl mx-auto">
                 {/* SEO H1 */}
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                <h1 className="text-3xl font-bold text-[#0F172A] mb-4">
                     STAR Interview Questions
                 </h1>
-                <p className="text-lg text-gray-600 mb-8">
+                <p className="text-lg text-[#475569] mb-8">
                     Master behavioral interviews using the STAR method: Situation, Task, Action, Result.
-                    <span className="block text-gray-500 mt-2">
+                    <span className="block text-[#94A3B8] mt-2">
                         使用 STAR 方法准备北美公司的行为面试
                     </span>
                 </p>
 
                 {/* STAR Method Explainer */}
                 <div className="bg-gradient-to-r from-slate-50 to-emerald-50 rounded-2xl p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-4">What is the STAR Method?</h2>
+                    <h2 className="text-lg font-semibold text-[#0F172A] mb-4">What is the STAR Method?</h2>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="text-center">
-                            <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">S</div>
+                            <div className="w-12 h-12 bg-[#2563EB] text-white rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">S</div>
                             <p className="font-medium">Situation</p>
-                            <p className="text-sm text-gray-500">情境背景</p>
+                            <p className="text-sm text-[#94A3B8]">情境背景</p>
                         </div>
                         <div className="text-center">
                             <div className="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">T</div>
                             <p className="font-medium">Task</p>
-                            <p className="text-sm text-gray-500">任务目标</p>
+                            <p className="text-sm text-[#94A3B8]">任务目标</p>
                         </div>
                         <div className="text-center">
-                            <div className="w-12 h-12 bg-blue-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">A</div>
+                            <div className="w-12 h-12 bg-[#2563EB] text-white rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">A</div>
                             <p className="font-medium">Action</p>
-                            <p className="text-sm text-gray-500">采取行动</p>
+                            <p className="text-sm text-[#94A3B8]">采取行动</p>
                         </div>
                         <div className="text-center">
-                            <div className="w-12 h-12 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">R</div>
+                            <div className="w-12 h-12 bg-[#10B981] text-white rounded-full flex items-center justify-center mx-auto mb-2 text-xl font-bold">R</div>
                             <p className="font-medium">Result</p>
-                            <p className="text-sm text-gray-500">结果成果</p>
+                            <p className="text-sm text-[#94A3B8]">结果成果</p>
                         </div>
                     </div>
                 </div>
@@ -100,21 +100,21 @@ export default function STARInterviewQuestionsPage() {
                         return (
                             <div
                                 key={cat.id}
-                                className="bg-white rounded-2xl p-6 shadow-sm border border-[#d0d7de]"
+                                className="bg-white rounded-2xl p-6 shadow-sm border border-[#CBD5E1]"
                             >
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                                        <Icon className="w-6 h-6 text-blue-700" />
+                                    <div className="w-12 h-12 bg-[#DBEAFE] rounded-xl flex items-center justify-center">
+                                        <Icon className="w-6 h-6 text-[#1D4ED8]" />
                                     </div>
                                     <div className="flex-1">
-                                        <h2 className="text-lg font-semibold text-gray-900">
+                                        <h2 className="text-lg font-semibold text-[#0F172A]">
                                             {cat.name}
-                                            <span className="text-sm font-normal text-gray-500 ml-2">{cat.nameZh}</span>
+                                            <span className="text-sm font-normal text-[#94A3B8] ml-2">{cat.nameZh}</span>
                                         </h2>
                                         <ul className="mt-3 space-y-2">
                                             {cat.examples.map((ex, i) => (
-                                                <li key={i} className="text-sm text-gray-600 flex items-start gap-2">
-                                                    <span className="text-blue-600">•</span>
+                                                <li key={i} className="text-sm text-[#475569] flex items-start gap-2">
+                                                    <span className="text-[#2563EB]">•</span>
                                                     {ex}
                                                 </li>
                                             ))}
@@ -127,14 +127,14 @@ export default function STARInterviewQuestionsPage() {
                 </div>
 
                 {/* CTA */}
-                <div className="bg-gradient-to-r from-slate-900 to-blue-700 rounded-2xl p-6 text-white">
+                <div className="bg-gradient-to-r from-[#0B1F3B] to-[#2563EB] rounded-2xl p-6 text-white">
                     <h2 className="text-xl font-bold mb-2">Practice STAR Responses</h2>
-                    <p className="text-blue-100 mb-4">
+                    <p className="text-[#DBEAFE] mb-4">
                         Use our flashcards to prepare your STAR stories for common behavioral questions
                     </p>
                     <Link
                         href="/review/qa"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-xl font-medium hover:bg-slate-50 transition-colors"
+                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-[#1D4ED8] rounded-xl font-medium hover:bg-slate-50 transition-colors"
                     >
                         Start Practice
                         <ArrowRight className="w-4 h-4" />

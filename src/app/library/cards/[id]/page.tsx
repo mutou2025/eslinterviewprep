@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, CheckSquare, MessageCircle, MessageSquare, MoreHorizontal, PlayCircle, Share2, Star, ThumbsUp, X } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
@@ -159,8 +159,20 @@ function saveCardSet(storageKey: string, ids: Set<string>) {
 export default function CardDetailPage() {
     const params = useParams()
     const router = useRouter()
+    const searchParams = useSearchParams()
     const { t, contentLanguage, uiLanguage } = useI18n()
     const cardId = params.id as string
+    const backTrack = searchParams.get('track')
+    const backCategory = searchParams.get('category')
+    const backKnowledgePoint = searchParams.get('point')
+    const backSearchQuery = searchParams.get('q')
+    const backParams = new URLSearchParams()
+    if (backTrack) backParams.set('track', backTrack)
+    if (backCategory) backParams.set('category', backCategory)
+    if (backKnowledgePoint) backParams.set('point', backKnowledgePoint)
+    if (backSearchQuery) backParams.set('q', backSearchQuery)
+    const backToLibraryHref = `/library${backParams.toString() ? `?${backParams.toString()}` : ''}`
+    const buildCardDetailHref = (targetCardId: string) => `/library/cards/${targetCardId}${backParams.toString() ? `?${backParams.toString()}` : ''}`
 
     const [card, setCard] = useState<Card | null>(null)
     const [isLoading, setIsLoading] = useState(true)
@@ -266,13 +278,13 @@ export default function CardDetailPage() {
         }
         setIsAnswerLoading(true)
         try {
-            const answer = await getCardAnswer(card.id)
+            const answer = await getCardAnswer(card.id, contentLanguage)
             setCard(prev => prev ? { ...prev, answer: answer || undefined } : null)
             setShowAnswer(true)
         } finally {
             setIsAnswerLoading(false)
         }
-    }, [card])
+    }, [card, contentLanguage])
 
     const toggleFavorite = useCallback(async () => {
         const favList = await getDefaultList()
@@ -419,8 +431,8 @@ export default function CardDetailPage() {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <p className="text-gray-500 mb-4">{t('card.notFound')}</p>
-                    <Link href="/library" className="text-blue-600 hover:underline">
+                    <p className="text-[#94A3B8] mb-4">{t('card.notFound')}</p>
+                    <Link href="/library" className="text-[#2563EB] hover:underline">
                         {t('card.backLibrary')}
                     </Link>
                 </div>
@@ -436,35 +448,35 @@ export default function CardDetailPage() {
                         {/* 顶部导航 */}
                         <div className="flex items-center justify-between mb-6">
                             <button
-                                onClick={() => router.back()}
-                                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                                onClick={() => router.push(backToLibraryHref)}
+                                className="flex items-center gap-2 text-[#475569] hover:text-[#0F172A] transition-colors"
                             >
                                 <ArrowLeft size={20} />
                                 {t('card.back')}
                             </button>
                             <Link
                                 href={`/review/qa?cardId=${cardId}`}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                             >
                                 <PlayCircle size={18} />
                                 {t('card.quickReview')}
                             </Link>
                         </div>
                         {actionHint && (
-                            <p className="mb-4 text-sm text-gray-600">{actionHint}</p>
+                            <p className="mb-4 text-sm text-[#475569]">{actionHint}</p>
                         )}
 
                 {/* 题目信息 */}
                 <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
                     {/* 头部 */}
-                    <div className="p-6 border-b border-gray-100">
+                    <div className="p-6 border-b border-[#E2E8F0]">
                         <div className="flex items-start justify-between gap-3 mb-4">
                             <div className="flex items-center gap-3 flex-wrap">
-                                <span className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-full">
+                                <span className="px-3 py-1 text-sm bg-[#DBEAFE] text-[#1D4ED8] rounded-full">
                                     {card.categoryL3Id}
                                 </span>
                                 {card.upstreamSource && (
-                                    <span className="text-xs text-gray-400">
+                                    <span className="text-xs text-[#94A3B8]">
                                         {t('card.source')}: {card.upstreamSource}
                                     </span>
                                 )}
@@ -475,7 +487,7 @@ export default function CardDetailPage() {
                                     onClick={toggleFavorite}
                                     className={`p-1.5 rounded-lg transition-colors ${isFavorite
                                         ? 'bg-yellow-100 text-yellow-600'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                        : 'bg-[#F1F5F9] text-[#94A3B8] hover:bg-[#E2E8F0]'
                                         }`}
                                     title={isFavorite ? t('card.removeFavorite') : t('card.addFavorite')}
                                 >
@@ -484,8 +496,8 @@ export default function CardDetailPage() {
                                 <button
                                     onClick={toggleEncountered}
                                     className={`p-1.5 rounded-lg transition-colors ${isEncountered
-                                        ? 'bg-blue-100 text-blue-600'
-                                        : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                        ? 'bg-[#DBEAFE] text-[#2563EB]'
+                                        : 'bg-[#F1F5F9] text-[#94A3B8] hover:bg-[#E2E8F0]'
                                         }`}
                                     title={isEncountered ? t('card.unmarkEncountered') : t('card.markEncountered')}
                                 >
@@ -493,26 +505,26 @@ export default function CardDetailPage() {
                                 </button>
                             </div>
                         </div>
-                        <h1 className="text-xl font-bold text-gray-900">
+                        <h1 className="text-xl font-bold text-[#0F172A]">
                             {localized?.question || card.question}
                         </h1>
                     </div>
 
                     {/* 答案内容 */}
                     <div className="p-6">
-                        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                            <span className="w-1 h-5 bg-blue-600 rounded-full"></span>
+                        <h2 className="text-lg font-semibold text-[#0F172A] mb-4 flex items-center gap-2">
+                            <span className="w-1 h-5 bg-[#2563EB] rounded-full"></span>
                             {t('card.referenceAnswer')}
                         </h2>
                         {!showAnswer && (
                             <button
                                 onClick={loadAnswer}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                className="px-4 py-2 bg-[#2563EB] text-white rounded-lg hover:bg-[#1D4ED8] transition-colors"
                             >
                                 {isAnswerLoading ? t('common.loading') : t('card.showAnswer')}
                             </button>
                         )}
-                        <div className="prose prose-blue max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
+                        <div className="prose prose-blue max-w-none prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-code:text-[#2563EB] prose-code:bg-[#EFF6FF] prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none">
                             <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 rehypePlugins={[rehypeHighlight]}
@@ -523,8 +535,8 @@ export default function CardDetailPage() {
                     </div>
 
                     {/* 底部信息 */}
-                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-100">
-                        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500">
+                    <div className="px-6 py-4 bg-[#F8FAFC] border-t border-[#E2E8F0]">
+                        <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-[#94A3B8]">
                             <div className="flex items-center gap-4">
                                 <span>{t('card.reviewCount')}: {card.reviewCount}</span>
                                 <span>{t('card.difficulty')}: {card.difficulty}</span>
@@ -538,7 +550,7 @@ export default function CardDetailPage() {
                                         onClick={toggleLike}
                                         className={`p-1.5 rounded-md transition-colors ${isLiked
                                             ? 'bg-red-100 text-red-500'
-                                            : 'bg-gray-200/70 text-gray-500 hover:bg-gray-200'
+                                            : 'bg-[#E2E8F0]/70 text-[#94A3B8] hover:bg-[#E2E8F0]'
                                             }`}
                                         title={isLiked ? t('card.unlike') : t('card.like')}
                                     >
@@ -546,14 +558,14 @@ export default function CardDetailPage() {
                                     </button>
                                     <button
                                         onClick={shareCard}
-                                        className="p-1.5 rounded-md bg-gray-200/70 text-gray-500 hover:bg-gray-200 transition-colors"
+                                        className="p-1.5 rounded-md bg-[#E2E8F0]/70 text-[#94A3B8] hover:bg-[#E2E8F0] transition-colors"
                                         title={t('card.share')}
                                     >
                                         <Share2 size={14} />
                                     </button>
                                     <button
                                         onClick={() => setFeedbackOpen(true)}
-                                        className="p-1.5 rounded-md bg-gray-200/70 text-gray-500 hover:bg-gray-200 transition-colors"
+                                        className="p-1.5 rounded-md bg-[#E2E8F0]/70 text-[#94A3B8] hover:bg-[#E2E8F0] transition-colors"
                                         title={t('card.feedback')}
                                     >
                                         <MessageSquare size={14} />
@@ -565,32 +577,32 @@ export default function CardDetailPage() {
                 </div>
 
                 <div className="mt-6 bg-white rounded-2xl shadow-sm overflow-hidden">
-                    <div className="p-6 border-b border-gray-100">
-                        <h2 className="text-lg font-semibold text-gray-900">
+                    <div className="p-6 border-b border-[#E2E8F0]">
+                        <h2 className="text-lg font-semibold text-[#0F172A]">
                             {t('card.commentsTitle', { count: comments.length })}
                         </h2>
 
                         <div className="mt-5 flex items-start gap-3">
-                            <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-semibold shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-[#DBEAFE] text-[#1D4ED8] flex items-center justify-center font-semibold shrink-0">
                                 {t('card.commentMe')}
                             </div>
                             <div className="flex-1">
-                                <div className="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                                <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#E2E8F0]">
                                     <textarea
-                                        rows={4}
+                                        rows={2}
                                         value={commentInput}
                                         onChange={(e) => setCommentInput(e.target.value)}
                                         maxLength={COMMENT_MAX_LENGTH}
                                         placeholder={t('card.commentPlaceholder')}
-                                        className="w-full resize-none bg-transparent text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none"
+                                        className="w-full resize-none bg-transparent text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:outline-none"
                                     />
                                     <div className="mt-3 flex items-center justify-between">
-                                        <span className="text-xs text-gray-400">
+                                        <span className="text-xs text-[#94A3B8]">
                                             {commentInput.length}/{COMMENT_MAX_LENGTH}
                                         </span>
                                         <button
                                             onClick={submitComment}
-                                            className="px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="px-3 py-1.5 text-sm rounded-lg bg-[#2563EB] text-white hover:bg-[#1D4ED8] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                             disabled={!commentInput.trim()}
                                         >
                                             {t('card.commentSend')}
@@ -603,21 +615,21 @@ export default function CardDetailPage() {
 
                     <div className="px-6 pb-6 pt-4">
                         {visibleComments.length === 0 ? (
-                            <p className="text-gray-500 text-sm">{t('card.commentEmptyList')}</p>
+                            <p className="text-[#94A3B8] text-sm">{t('card.commentEmptyList')}</p>
                         ) : (
                             <div className="space-y-6">
                                 {visibleComments.map(comment => (
-                                    <div key={comment.id} className="border-b border-gray-100 last:border-b-0 pb-6 last:pb-0">
+                                    <div key={comment.id} className="border-b border-[#E2E8F0] last:border-b-0 pb-6 last:pb-0">
                                         <div className="flex items-start gap-3">
-                                            <div className="w-9 h-9 rounded-full bg-gray-200 text-gray-700 flex items-center justify-center text-sm font-medium shrink-0">
+                                            <div className="w-9 h-9 rounded-full bg-[#E2E8F0] text-[#475569] flex items-center justify-center text-sm font-medium shrink-0">
                                                 {comment.author.slice(0, 1)}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center justify-between gap-3">
                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="text-sm text-gray-900 font-semibold">{comment.author}</span>
+                                                        <span className="text-sm text-[#0F172A] font-semibold">{comment.author}</span>
                                                         {comment.role && (
-                                                            <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                                                            <span className="text-xs px-2 py-0.5 rounded-full bg-[#F1F5F9] text-[#94A3B8]">
                                                                 {comment.role}
                                                             </span>
                                                         )}
@@ -627,9 +639,9 @@ export default function CardDetailPage() {
                                                     )}
                                                 </div>
 
-                                                <p className="mt-2 text-sm text-gray-900 leading-6 whitespace-pre-wrap">{comment.content}</p>
+                                                <p className="mt-2 text-sm text-[#0F172A] leading-6 whitespace-pre-wrap">{comment.content}</p>
 
-                                                <div className="mt-3 flex items-center gap-5 text-xs text-gray-500">
+                                                <div className="mt-3 flex items-center gap-5 text-xs text-[#94A3B8]">
                                                     <span>{formatRelativeTime(comment.createdAt, uiLanguage)}</span>
                                                     <span className="inline-flex items-center gap-1">
                                                         <ThumbsUp size={16} />
@@ -645,15 +657,15 @@ export default function CardDetailPage() {
                                                 </div>
 
                                                 {comment.replies && comment.replies.length > 0 && (
-                                                    <div className="mt-4 pl-4 border-l-2 border-gray-100 space-y-3">
+                                                    <div className="mt-4 pl-4 border-l-2 border-[#E2E8F0] space-y-3">
                                                         {comment.replies.slice(0, 2).map(reply => (
                                                             <div key={reply.id}>
-                                                                <p className="text-gray-800 text-xs leading-5">
-                                                                    <span className="font-medium text-gray-900">{reply.author}</span>
+                                                                <p className="text-[#0F172A] text-xs leading-5">
+                                                                    <span className="font-medium text-[#0F172A]">{reply.author}</span>
                                                                     {' : '}
                                                                     {reply.content}
                                                                 </p>
-                                                                <div className="mt-1 text-xs text-gray-500 inline-flex items-center gap-3">
+                                                                <div className="mt-1 text-xs text-[#94A3B8] inline-flex items-center gap-3">
                                                                     <span>{formatRelativeTime(reply.createdAt, uiLanguage)}</span>
                                                                     <span className="inline-flex items-center gap-1">
                                                                         <ThumbsUp size={14} />
@@ -663,7 +675,7 @@ export default function CardDetailPage() {
                                                             </div>
                                                         ))}
                                                         {comment.replies.length > 2 && (
-                                                            <button className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
+                                                            <button className="text-sm text-[#94A3B8] hover:text-[#475569] transition-colors">
                                                                 {t('card.commentViewAllReplies', { count: comment.replies.length })}
                                                             </button>
                                                         )}
@@ -678,7 +690,7 @@ export default function CardDetailPage() {
                         {comments.length > 3 && !showAllComments && (
                             <button
                                 onClick={() => setShowAllComments(true)}
-                                className="w-full mt-6 py-4 rounded-lg bg-gray-100 text-gray-700 text-base font-semibold hover:bg-gray-200 transition-colors"
+                                className="w-full mt-6 py-4 rounded-lg bg-[#F1F5F9] text-[#475569] text-base font-semibold hover:bg-[#E2E8F0] transition-colors"
                             >
                                 {t('card.commentViewAllComments', { count: comments.length })}
                             </button>
@@ -688,23 +700,23 @@ export default function CardDetailPage() {
 
                     </div>
                     <aside className="mt-6 lg:mt-0 lg:fixed lg:right-6 lg:bottom-6 lg:w-80 lg:z-30">
-                        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-5 lg:max-h-[70vh] lg:overflow-y-auto">
-                            <h2 className="text-xl leading-none font-bold text-gray-900">{t('card.relatedTitle')}</h2>
-                            <div className="mt-4 border-t border-gray-200 pt-3">
+                        <div className="bg-white rounded-2xl shadow-lg border border-[#E2E8F0] p-5 lg:max-h-[70vh] lg:overflow-y-auto">
+                            <h2 className="text-xl leading-none font-bold text-[#0F172A]">{t('card.relatedTitle')}</h2>
+                            <div className="mt-4 border-t border-[#E2E8F0] pt-3">
                                 {relatedRecommendations.length === 0 ? (
-                                    <p className="text-sm text-gray-500 py-3">{t('card.relatedEmpty')}</p>
+                                    <p className="text-sm text-[#94A3B8] py-3">{t('card.relatedEmpty')}</p>
                                 ) : (
                                     <div className="space-y-3">
                                         {relatedRecommendations.map((item) => (
                                             <Link
                                                 key={item.id}
-                                                href={`/library/cards/${item.id}`}
-                                                className="block pb-3 border-b border-gray-100 last:border-b-0 last:pb-0 hover:opacity-80 transition-opacity"
+                                                href={buildCardDetailHref(item.id)}
+                                                className="block pb-3 border-b border-[#E2E8F0] last:border-b-0 last:pb-0 hover:opacity-80 transition-opacity"
                                             >
-                                                <p className="text-sm leading-tight font-semibold text-gray-900 truncate">
+                                                <p className="text-sm leading-tight font-semibold text-[#0F172A] truncate">
                                                     {item.title}
                                                 </p>
-                                                <p className="mt-1 text-xs leading-none text-gray-500">
+                                                <p className="mt-1 text-xs leading-none text-[#94A3B8]">
                                                     {t('card.relatedFrequency', {
                                                         level: item.frequency === 'high'
                                                             ? t('frequency.high')
@@ -734,11 +746,11 @@ export default function CardDetailPage() {
                         className="w-full max-w-xl bg-white rounded-2xl shadow-xl"
                         onClick={(e) => e.stopPropagation()}
                     >
-                        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-900">{t('card.feedbackTitle')}</h2>
+                        <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
+                            <h2 className="text-lg font-semibold text-[#0F172A]">{t('card.feedbackTitle')}</h2>
                             <button
                                 onClick={() => setFeedbackOpen(false)}
-                                className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="p-1 text-[#94A3B8] hover:text-[#475569] transition-colors"
                                 title={t('card.feedbackClose')}
                             >
                                 <X size={18} />
@@ -746,11 +758,11 @@ export default function CardDetailPage() {
                         </div>
                         <form onSubmit={submitFeedback} className="p-6 space-y-4">
                             <div>
-                                <label className="block text-sm text-gray-700 mb-2">{t('card.feedbackType')}</label>
+                                <label className="block text-sm text-[#475569] mb-2">{t('card.feedbackType')}</label>
                                 <select
                                     value={feedbackType}
                                     onChange={(e) => setFeedbackType(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-[#CBD5E1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                                 >
                                     <option value="content">{t('card.feedbackTypeContent')}</option>
                                     <option value="bug">{t('card.feedbackTypeBug')}</option>
@@ -759,26 +771,26 @@ export default function CardDetailPage() {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm text-gray-700 mb-2">{t('card.feedbackContent')}</label>
+                                <label className="block text-sm text-[#475569] mb-2">{t('card.feedbackContent')}</label>
                                 <textarea
                                     value={feedbackText}
                                     onChange={(e) => setFeedbackText(e.target.value)}
                                     rows={5}
                                     placeholder={t('card.feedbackPlaceholder')}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                    className="w-full px-3 py-2 border border-[#CBD5E1] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2563EB] focus:border-transparent"
                                 />
                             </div>
                             <div className="flex items-center justify-end gap-3 pt-2">
                                 <button
                                     type="button"
                                     onClick={() => setFeedbackOpen(false)}
-                                    className="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+                                    className="px-4 py-2 rounded-lg text-[#475569] bg-[#F1F5F9] hover:bg-[#E2E8F0] transition-colors"
                                 >
                                     {t('card.feedbackCancel')}
                                 </button>
                                 <button
                                     type="submit"
-                                    className="px-4 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                                    className="px-4 py-2 rounded-lg text-white bg-[#2563EB] hover:bg-[#1D4ED8] transition-colors"
                                 >
                                     {t('card.feedbackSubmit')}
                                 </button>
