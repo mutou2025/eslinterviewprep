@@ -8,7 +8,11 @@ import { getCardSummariesPageCached, getCategories, getSolvedCardIdsCached, init
 import { useI18n } from '@/i18n/provider'
 import { getLocalizedCardContent } from '@/i18n/content'
 import { TECHNICAL_TRACKS, getTrackCategoryIds, isTechnicalTrackId } from '@/lib/library-tracks'
-import { buildTechnicalKnowledgeCategories, classifyCardToKnowledgePoint } from '@/lib/technical-taxonomy'
+import {
+    buildTechnicalKnowledgeCategories,
+    classifyCardToKnowledgePoint,
+    type TechnicalKnowledgePoint
+} from '@/lib/technical-taxonomy'
 import type { Card, Category } from '@/types'
 
 const PAGE_SIZE = 40
@@ -155,7 +159,7 @@ export default function LibraryPage() {
 
     const allKnowledgePoints = useMemo(() => {
         const seen = new Set<string>()
-        const points: Array<{ id: string; name: string; nameEn: string }> = []
+        const points: TechnicalKnowledgePoint[] = []
         for (const category of knowledgeCategories) {
             for (const point of category.points) {
                 if (seen.has(point.id)) continue
@@ -783,61 +787,67 @@ export default function LibraryPage() {
                                         </div>
                                     </div>
 
-                                    <div className="shrink-0 ml-auto flex items-center gap-3 text-[#475569]">
-                                        <div className="inline-flex items-center gap-2 rounded-full border border-[#D6E4FF] bg-[#EFF6FF] px-3 py-1.5">
-                                            <Circle size={15} />
-                                            <span className="text-[16px] font-semibold">
+                                </div>
+
+                                <div className="mb-3 flex items-start justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
+                                        {!isFilterOpen && (
+                                            activeFilterCount > 0 ? (
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="text-xs font-medium text-[#64748B]">{t('library.selectedFiltersLabel')}</span>
+
+                                                    {frequencyFilters.map(item => (
+                                                        <button
+                                                            key={`frequency-${item}`}
+                                                            type="button"
+                                                            onClick={() => toggleFrequencyFilter(item)}
+                                                            className="inline-flex items-center gap-1 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1 text-sm text-[#1D4ED8]"
+                                                        >
+                                                            <span>{t(getFrequencyLabelKey(item))}</span>
+                                                            <span className="text-xs opacity-70">×</span>
+                                                        </button>
+                                                    ))}
+
+                                                    {selectedKnowledgePointChips.map(point => (
+                                                        <button
+                                                            key={`point-${point.id}`}
+                                                            type="button"
+                                                            onClick={() => toggleKnowledgePointFilter(point.id)}
+                                                            className="inline-flex items-center gap-1.5 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1 text-sm text-[#1D4ED8]"
+                                                        >
+                                                            <span className="max-w-[180px] truncate">{point.name}</span>
+                                                            <span className="text-xs opacity-75">{point.count}</span>
+                                                            <span className="text-xs opacity-70">×</span>
+                                                        </button>
+                                                    ))}
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={resetAllFilters}
+                                                        className="inline-flex items-center rounded-full px-2.5 py-1 text-xs text-[#64748B] hover:bg-[#F1F5F9]"
+                                                    >
+                                                        {t('library.filterReset')}
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <span className="text-xs font-medium text-[#64748B]">{t('library.selectedFiltersLabel')}</span>
+                                                    <span className="inline-flex items-center rounded-full border border-[#E2E8F0] bg-white px-2.5 py-1 text-xs text-[#64748B]">
+                                                        {`${selectedTrackLabel} ${t('library.all')}${contentLanguage === 'zh-CN' ? '题库' : 'Question Bank'}`}
+                                                    </span>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                    <div className="shrink-0">
+                                        <div className="inline-flex items-center gap-2 text-[#64748B]">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-[#60A5FA]" />
+                                            <span className="text-[13px] font-medium">
                                                 {t('library.solvedProgress', { solved: solvedCount, total })}
                                             </span>
                                         </div>
-                                        <Link
-                                            href="/review/qa"
-                                            className="flex items-center gap-1.5 px-4 py-2 text-sm bg-[#2563EB] text-white rounded-xl hover:bg-[#1D4ED8] transition-colors shadow-sm"
-                                        >
-                                            <PlayCircle size={16} />
-                                            {t('library.startReview')}
-                                        </Link>
                                     </div>
                                 </div>
-
-                                {!isFilterOpen && activeFilterCount > 0 && (
-                                    <div className="mb-3 flex flex-wrap items-center gap-2">
-                                        <span className="text-xs font-medium text-[#64748B]">{t('library.selectedFiltersLabel')}</span>
-
-                                        {frequencyFilters.map(item => (
-                                            <button
-                                                key={`frequency-${item}`}
-                                                type="button"
-                                                onClick={() => toggleFrequencyFilter(item)}
-                                                className="inline-flex items-center gap-1 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1 text-sm text-[#1D4ED8]"
-                                            >
-                                                <span>{t(getFrequencyLabelKey(item))}</span>
-                                                <span className="text-xs opacity-70">×</span>
-                                            </button>
-                                        ))}
-
-                                        {selectedKnowledgePointChips.map(point => (
-                                            <button
-                                                key={`point-${point.id}`}
-                                                type="button"
-                                                onClick={() => toggleKnowledgePointFilter(point.id)}
-                                                className="inline-flex items-center gap-1.5 rounded-full border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-1 text-sm text-[#1D4ED8]"
-                                            >
-                                                <span className="max-w-[180px] truncate">{point.name}</span>
-                                                <span className="text-xs opacity-75">{point.count}</span>
-                                                <span className="text-xs opacity-70">×</span>
-                                            </button>
-                                        ))}
-
-                                        <button
-                                            type="button"
-                                            onClick={resetAllFilters}
-                                            className="inline-flex items-center rounded-full px-2.5 py-1 text-xs text-[#64748B] hover:bg-[#F1F5F9]"
-                                        >
-                                            {t('library.filterReset')}
-                                        </button>
-                                    </div>
-                                )}
 
                                 {isLoading ? (
                                     <div className="py-14 flex justify-center">

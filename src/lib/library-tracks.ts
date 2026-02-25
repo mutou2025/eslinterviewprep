@@ -66,23 +66,24 @@ export function isTechnicalTrackId(value: string | null): value is TechnicalTrac
 }
 
 export function getTrackCategoryIds(categories: Category[], trackId: TechnicalTrackId): string[] {
+    if (categories.length === 0) return []
+
     // Current data is frontend-centric; map all existing questions to this track for now.
     if (trackId === CURRENT_CONTENT_TRACK) {
         return categories.map(category => category.id)
     }
 
-    // Other tracks are reserved until dedicated question sets are added.
-    return []
-
-    /*
     const track = TECHNICAL_TRACKS.find(item => item.id === trackId)
     if (!track) return []
 
-    return categories
+    const matched = categories
         .filter(category => {
             const haystack = `${category.id} ${category.name} ${category.nameEn || ''}`.toLowerCase()
             return track.keywords.some(keyword => haystack.includes(keyword.toLowerCase()))
         })
         .map(category => category.id)
-    */
+
+    // If there is no dedicated dataset for this track yet, fall back to all categories
+    // so the question bank is still usable.
+    return matched.length > 0 ? matched : categories.map(category => category.id)
 }

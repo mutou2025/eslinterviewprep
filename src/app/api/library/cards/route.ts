@@ -5,6 +5,37 @@ import { consumeRateLimit, getClientIp } from '@/lib/server-rate-limit'
 export const runtime = 'nodejs'
 
 const MAX_PAGE_SIZE = 100
+const CARD_SELECT_I18N = 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,title_zh,title_en,question,question_zh,question_en,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
+const CARD_SELECT_LEGACY = 'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,question,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at'
+const MISSING_I18N_COLUMN_REGEX = /column cards\.(title_zh|title_en|question_zh|question_en|answer_zh|answer_en) does not exist/i
+
+function getErrorMessage(error: unknown): string {
+    if (!error) return ''
+    if (typeof error === 'string') return error
+    if (typeof error === 'object' && error !== null) {
+        const withMessage = error as { message?: unknown }
+        if (typeof withMessage.message === 'string') return withMessage.message
+        try {
+            return JSON.stringify(error)
+        } catch {
+            return String(error)
+        }
+    }
+    return String(error)
+}
+
+function shouldFallbackToLegacySelect(error: unknown): boolean {
+    const message = getErrorMessage(error).trim()
+    if (MISSING_I18N_COLUMN_REGEX.test(message)) return true
+    if (message === '' || message === '{}') return true
+
+    if (error && typeof error === 'object') {
+        const withCode = error as { code?: unknown }
+        if (withCode.code === '42703') return true
+    }
+
+    return false
+}
 
 function parsePositiveInt(value: string | null, fallback: number): number {
     if (!value) return fallback
@@ -65,29 +96,34 @@ export async function GET(request: NextRequest) {
         const from = (page - 1) * pageSize
         const to = from + pageSize - 1
 
-        let query = supabase
-            .from('cards')
-            .select(
-                'id,source,upstream_source,category_l1_id,category_l2_id,category_l3_id,title,title_zh,title_en,question,question_zh,question_en,question_type,difficulty,frequency,custom_tags,origin_upstream_id,created_at,updated_at',
-                { count: 'exact' }
-            )
+        function buildCardsQuery(selectColumns: string) {
+            let query = supabase
+                .from('cards')
+                .select(selectColumns, { count: 'exact' })
 
-        if (search) {
-            query = query.or(`title.ilike.%${search}%,question.ilike.%${search}%`)
+            if (search) {
+                query = query.or(`title.ilike.%${search}%,question.ilike.%${search}%`)
+            }
+
+            if (categoryL3Id) {
+                query = query.eq('category_l3_id', categoryL3Id)
+            } else if (categoryL3Ids.length > 0) {
+                query = query.in('category_l3_id', categoryL3Ids)
+            }
+
+            return query.order('id').range(from, to)
         }
 
-        if (categoryL3Id) {
-            query = query.eq('category_l3_id', categoryL3Id)
-        } else if (categoryL3Ids.length > 0) {
-            query = query.in('category_l3_id', categoryL3Ids)
+        let { data, error, count } = await buildCardsQuery(CARD_SELECT_I18N)
+        if (error && shouldFallbackToLegacySelect(error)) {
+            const fallbackResult = await buildCardsQuery(CARD_SELECT_LEGACY)
+            data = fallbackResult.data
+            error = fallbackResult.error
+            count = fallbackResult.count
         }
-
-        const { data, error, count } = await query
-            .order('id')
-            .range(from, to)
 
         if (error) {
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+            return NextResponse.json({ success: false, error: getErrorMessage(error) }, { status: 500 })
         }
 
         return NextResponse.json(
