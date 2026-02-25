@@ -4,6 +4,38 @@ import { consumeRateLimit, getClientIp } from '@/lib/server-rate-limit'
 
 export const runtime = 'nodejs'
 
+const ANSWER_SELECT_I18N = 'answer,answer_zh,answer_en'
+const ANSWER_SELECT_LEGACY = 'answer'
+const MISSING_I18N_COLUMN_REGEX = /column cards\.(title_zh|title_en|question_zh|question_en|answer_zh|answer_en) does not exist/i
+
+function getErrorMessage(error: unknown): string {
+    if (!error) return ''
+    if (typeof error === 'string') return error
+    if (typeof error === 'object' && error !== null) {
+        const withMessage = error as { message?: unknown }
+        if (typeof withMessage.message === 'string') return withMessage.message
+        try {
+            return JSON.stringify(error)
+        } catch {
+            return String(error)
+        }
+    }
+    return String(error)
+}
+
+function shouldFallbackToLegacySelect(error: unknown): boolean {
+    const message = getErrorMessage(error).trim()
+    if (MISSING_I18N_COLUMN_REGEX.test(message)) return true
+    if (message === '' || message === '{}') return true
+
+    if (error && typeof error === 'object') {
+        const withCode = error as { code?: unknown }
+        if (withCode.code === '42703') return true
+    }
+
+    return false
+}
+
 export async function GET(request: NextRequest) {
     try {
         const authHeader = request.headers.get('authorization') || ''
@@ -45,14 +77,21 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ success: false, error: '缺少 cardId' }, { status: 400 })
         }
 
-        const { data, error } = await supabase
+        const buildQuery = (selectColumns: string) => supabase
             .from('cards')
-            .select('answer,answer_zh,answer_en')
+            .select(selectColumns)
             .eq('id', cardId)
             .maybeSingle()
 
+        let { data, error } = await buildQuery(ANSWER_SELECT_I18N)
+        if (error && shouldFallbackToLegacySelect(error)) {
+            const fallbackResult = await buildQuery(ANSWER_SELECT_LEGACY)
+            data = fallbackResult.data
+            error = fallbackResult.error
+        }
+
         if (error) {
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 })
+            return NextResponse.json({ success: false, error: getErrorMessage(error) }, { status: 500 })
         }
 
         return NextResponse.json(

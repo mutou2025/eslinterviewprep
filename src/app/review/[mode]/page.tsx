@@ -8,7 +8,7 @@ import { MasteryProgress } from '@/components/MasteryBadge'
 import { useReviewStore } from '@/store/review-store'
 import { useI18n } from '@/i18n/provider'
 import { buildTechnicalKnowledgeCategories } from '@/lib/technical-taxonomy'
-import { getReviewCards, getMasteryStats, getCardAnswer, getCategories, getDefaultList, getDueCount } from '@/lib/data-service'
+import { createList, getReviewCards, getMasteryStats, getCardAnswer, getCategories, getDefaultList, getDueCount, updateList } from '@/lib/data-service'
 import { restoreSession, createSession, getDefaultFilters } from '@/lib/session-service'
 import type { CardList, Category, MasteryStatus } from '@/types'
 
@@ -101,13 +101,13 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     const searchParams = useSearchParams()
     const scopeParam = searchParams.get('scope')?.trim() || ''
     const cardIdParam = searchParams.get('cardId')?.trim() || ''
-    const scope = scopeParam || (cardIdParam ? `card:${cardIdParam}` : '')
-    const activeScope = scope || 'all'
+    const scopeFromUrl = scopeParam || (cardIdParam ? `card:${cardIdParam}` : '') || 'all'
     const { t, contentLanguage, uiLanguage } = useI18n()
 
     const [isLoading, setIsLoading] = useState(true)
     const [mode, setMode] = useState<ReviewMode>('qa')
-    const [selectedScope, setSelectedScope] = useState(activeScope)
+    const [activeScope, setActiveScope] = useState(scopeFromUrl)
+    const [selectedScope, setSelectedScope] = useState(scopeFromUrl)
     const [answerLoadingIds, setAnswerLoadingIds] = useState<Set<string>>(new Set())
     const [scopeOptionsLoading, setScopeOptionsLoading] = useState(false)
     const [scopeCategories, setScopeCategories] = useState<Category[]>([])
@@ -115,11 +115,15 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     const [isScopePanelOpen, setIsScopePanelOpen] = useState(false)
     const [draftDomainIds, setDraftDomainIds] = useState<string[]>([])
     const [draftPointKeys, setDraftPointKeys] = useState<string[]>([])
+    const [isScopeSwitching, setIsScopeSwitching] = useState(false)
+    const [isFavoriteUpdating, setIsFavoriteUpdating] = useState(false)
     const [dueCount, setDueCount] = useState(0)
     const [masteryStats, setMasteryStats] = useState<Record<MasteryStatus, number>>({
         new: 0, fuzzy: 0, 'can-explain': 0, solid: 0
     })
     const scopePanelRef = useRef<HTMLDivElement | null>(null)
+    const hasInitializedReviewRef = useRef(false)
+    const loadSequenceRef = useRef(0)
 
     const {
         session,
@@ -161,12 +165,13 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     }, [params])
 
     useEffect(() => {
-        const parsed = parseMultiFilterScope(activeScope)
-        setSelectedScope(activeScope)
+        const parsed = parseMultiFilterScope(scopeFromUrl)
+        setActiveScope(scopeFromUrl)
+        setSelectedScope(scopeFromUrl)
         setDraftDomainIds(parsed.domainIds)
         setDraftPointKeys(parsed.pointKeys)
         setIsScopePanelOpen(false)
-    }, [activeScope])
+    }, [scopeFromUrl])
 
     useEffect(() => {
         if (!isScopePanelOpen) return
@@ -212,12 +217,20 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     }, [])
 
     const startReviewWithScope = useCallback((nextScope: string) => {
+        if (nextScope === activeScope) return
         if (nextScope === BEHAVIORAL_INTERVIEW_SCOPE) {
             router.push('/behavior-interview')
             return
         }
-        router.push(`/review/${mode}?scope=${encodeURIComponent(nextScope)}`)
-    }, [mode, router])
+        setActiveScope(nextScope)
+        setSelectedScope(nextScope)
+
+        const nextQuery = new URLSearchParams(searchParams.toString())
+        nextQuery.set('scope', nextScope)
+        nextQuery.delete('cardId')
+        const nextUrl = `/review/${mode}?${nextQuery.toString()}`
+        window.history.replaceState(window.history.state, '', nextUrl)
+    }, [activeScope, mode, router, searchParams])
 
     const favoriteCount = favoriteList?.cardIds.length || 0
     const quickScopeOptions = useMemo(() => ([
@@ -233,6 +246,12 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         () => quickScopeOptions.slice(0, 5),
         [quickScopeOptions]
     )
+    const quickScopeButtonOptions = useMemo(() => {
+        const preferredOrder = ['due', 'all', 'mastery:new', 'favorites', 'mastery:fuzzy']
+        return preferredOrder
+            .map(value => featuredQuickScopeOptions.find(option => option.value === value))
+            .filter((option): option is { value: string; label: string } => Boolean(option))
+    }, [featuredQuickScopeOptions])
 
     const technicalDomainScopeOptions = useMemo(() => (
         knowledgeCategories.map(category => ({
@@ -258,6 +277,27 @@ export default function ReviewPage({ params }: ReviewPageProps) {
             label: contentLanguage === 'en-US' ? point.nameEn : point.name
         })))
     ), [knowledgeCategories, contentLanguage])
+
+    const domainLabelMap = useMemo(() => {
+        const map = new Map<string, string>()
+        technicalDomainScopeOptions.forEach(option => {
+            map.set(option.value, option.label)
+        })
+        return map
+    }, [technicalDomainScopeOptions])
+
+    const pointLabelMap = useMemo(() => {
+        const map = new Map<string, string>()
+        knowledgeCategories.forEach(category => {
+            category.points.forEach(point => {
+                map.set(
+                    `${category.id}:${point.id}`,
+                    contentLanguage === 'en-US' ? point.nameEn : point.name
+                )
+            })
+        })
+        return map
+    }, [knowledgeCategories, contentLanguage])
 
     const allScopeOptions = useMemo(
         () => [...quickScopeOptions, ...categoryScopeOptions, ...allPointScopeOptions],
@@ -367,6 +407,27 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         return [currentScopeLabel]
     }, [activeScope, categoryScopeOptions, currentScopeLabel, uiLanguage])
 
+    const activeScopeSelection = useMemo(
+        () => parseMultiFilterScope(activeScope),
+        [activeScope]
+    )
+
+    const activeDomainTags = useMemo(() => {
+        return activeScopeSelection.domainIds
+            .map(domainId => ({
+                id: domainId,
+                label: domainLabelMap.get(domainId) || domainId
+            }))
+    }, [activeScopeSelection, domainLabelMap])
+
+    const activePointTags = useMemo(() => {
+        return activeScopeSelection.pointKeys
+            .map(pointKey => ({
+                key: pointKey,
+                label: pointLabelMap.get(pointKey) || pointKey.split(':')[1] || pointKey
+            }))
+    }, [activeScopeSelection, pointLabelMap])
+
     const nextDraftScope = useMemo(
         () => buildMultiFilterScope({
             domainIds: effectiveDraftDomainIds,
@@ -417,6 +478,32 @@ export default function ReviewPage({ params }: ReviewPageProps) {
         setIsScopePanelOpen(false)
         startReviewWithScope(nextDraftScope)
     }
+
+    const removeDomainTag = useCallback((domainId: string) => {
+        const parsed = parseMultiFilterScope(activeScope)
+        const nextDomainIds = parsed.domainIds.filter(id => id !== domainId)
+        const nextPointKeys = parsed.pointKeys.filter(pointKey => {
+            const pair = parsePointKey(pointKey)
+            return pair ? pair.categoryId !== domainId : false
+        })
+        const nextScope = buildMultiFilterScope({
+            domainIds: nextDomainIds,
+            pointKeys: nextPointKeys
+        })
+        setSelectedScope(nextScope)
+        startReviewWithScope(nextScope)
+    }, [activeScope, startReviewWithScope])
+
+    const removePointTag = useCallback((pointKey: string) => {
+        const parsed = parseMultiFilterScope(activeScope)
+        const nextPointKeys = parsed.pointKeys.filter(key => key !== pointKey)
+        const nextScope = buildMultiFilterScope({
+            domainIds: parsed.domainIds,
+            pointKeys: nextPointKeys
+        })
+        setSelectedScope(nextScope)
+        startReviewWithScope(nextScope)
+    }, [activeScope, startReviewWithScope])
 
     const renderScopeSelectorPanel = (align: 'left' | 'right' | 'auto') => (
         <div className="relative" ref={scopePanelRef}>
@@ -524,11 +611,18 @@ export default function ReviewPage({ params }: ReviewPageProps) {
 
     // 加载数据
     const loadData = useCallback(async (continueSession: boolean = true) => {
-        setIsLoading(true)
+        const loadSeq = ++loadSequenceRef.current
+        const shouldBlockPage = !hasInitializedReviewRef.current
+        if (shouldBlockPage) {
+            setIsLoading(true)
+        } else {
+            setIsScopeSwitching(true)
+        }
 
         try {
             // 获取卡片
             const cards = await getReviewCards(activeScope, 500)
+            if (loadSeq !== loadSequenceRef.current) return
 
             // 设置卡片到 store
             setCards(cards)
@@ -536,9 +630,9 @@ export default function ReviewPage({ params }: ReviewPageProps) {
             // 尝试恢复会话
             if (continueSession) {
                 const existingSession = await restoreSession(activeScope, mode)
+                if (loadSeq !== loadSequenceRef.current) return
                 if (existingSession && existingSession.queueCardIds.length > 0) {
                     setSession(existingSession)
-                    setIsLoading(false)
                     return
                 }
             }
@@ -552,27 +646,81 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                 cards,
                 defaultFilters
             )
+            if (loadSeq !== loadSequenceRef.current) return
             setSession(newSession)
 
-            // 获取统计
-            const [stats, due] = await Promise.all([
-                getMasteryStats(),
-                getDueCount(new Date())
-            ])
-            setMasteryStats(stats)
-            setDueCount(due)
+            // 仅首次加载时刷新侧边统计，避免切换范围导致整页多区块闪动
+            if (shouldBlockPage) {
+                const [stats, due] = await Promise.all([
+                    getMasteryStats(),
+                    getDueCount(new Date())
+                ])
+                if (loadSeq !== loadSequenceRef.current) return
+                setMasteryStats(stats)
+                setDueCount(due)
+            }
 
         } catch (error) {
             console.error('Failed to load review data:', error)
         } finally {
-            setIsLoading(false)
+            if (loadSeq === loadSequenceRef.current) {
+                if (shouldBlockPage) {
+                    setIsLoading(false)
+                } else {
+                    setIsScopeSwitching(false)
+                }
+                hasInitializedReviewRef.current = true
+            }
         }
     }, [activeScope, mode, setCards, setSession])
 
     useEffect(() => {
         loadData()
+    }, [activeScope, loadData])
+
+    useEffect(() => {
         return () => reset()
-    }, [activeScope, loadData, reset])
+    }, [reset])
+
+    const isCurrentCardFavorite = useMemo(() => {
+        if (!currentCard || !favoriteList) return false
+        return favoriteList.cardIds.includes(currentCard.id)
+    }, [currentCard, favoriteList])
+
+    const toggleFavoriteForCurrentCard = useCallback(async () => {
+        if (!currentCard || isFavoriteUpdating) return
+        setIsFavoriteUpdating(true)
+
+        try {
+            let list = favoriteList
+            if (!list) {
+                const existing = await getDefaultList()
+                list = existing || await createList(
+                    uiLanguage === 'en-US' ? '⭐ Favorites' : '⭐ 最喜欢的',
+                    [],
+                    true
+                )
+            }
+
+            if (!list) return
+
+            const alreadyIncluded = list.cardIds.includes(currentCard.id)
+            const nextCardIds = alreadyIncluded
+                ? list.cardIds.filter(id => id !== currentCard.id)
+                : [...list.cardIds, currentCard.id]
+
+            await updateList(list.id, { cardIds: nextCardIds })
+            setFavoriteList({
+                ...list,
+                cardIds: nextCardIds,
+                updatedAt: new Date()
+            })
+        } catch (error) {
+            console.error('Failed to update favorites:', error)
+        } finally {
+            setIsFavoriteUpdating(false)
+        }
+    }, [currentCard, favoriteList, isFavoriteUpdating, uiLanguage])
 
     // 键盘快捷键
     useEffect(() => {
@@ -700,20 +848,59 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                         <div className={`${infoCardClass} z-20 overflow-visible`}>
                             <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-[#DBEAFE]/55 via-white/10 to-[#E2E8F0]/40" />
                             <p className="text-xs text-[#94A3B8] mb-1">
-                                {uiLanguage === 'en-US' ? 'Current Scope' : '当前范围'}
+                                {uiLanguage === 'en-US' ? 'Current Review Scope' : '当前刷题范围'}
                             </p>
-                            <p className="text-sm font-medium text-[#0F172A] break-words">{currentScopeLabel}</p>
 
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                                {scopeSummaryTags.map(tag => (
-                                    <span
-                                        key={tag}
-                                        className={softPillClass}
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
+                            {activeDomainTags.length > 0 || activePointTags.length > 0 ? (
+                                <div className="mt-2 space-y-2">
+                                    {activeDomainTags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {activeDomainTags.map(tag => (
+                                                <button
+                                                    key={`active-domain-${tag.id}`}
+                                                    type="button"
+                                                    onClick={() => removeDomainTag(tag.id)}
+                                                    className={`${softPillClass} inline-flex items-center gap-1 hover:border-[#93C5FD] hover:text-[#1D4ED8] transition-colors`}
+                                                >
+                                                    <span>{tag.label}</span>
+                                                    <span className="font-mono text-[11px]">x</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {activeDomainTags.length > 0 && activePointTags.length > 0 && (
+                                        <div className="h-px bg-gradient-to-r from-transparent via-[#93C5FD] to-transparent" />
+                                    )}
+
+                                    {activePointTags.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {activePointTags.map(tag => (
+                                                <button
+                                                    key={`active-point-${tag.key}`}
+                                                    type="button"
+                                                    onClick={() => removePointTag(tag.key)}
+                                                    className={`${softPillClass} inline-flex items-center gap-1 hover:border-[#93C5FD] hover:text-[#1D4ED8] transition-colors`}
+                                                >
+                                                    <span>{tag.label}</span>
+                                                    <span className="font-mono text-[11px]">x</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                    {scopeSummaryTags.map(tag => (
+                                        <span
+                                            key={tag}
+                                            className={softPillClass}
+                                        >
+                                            {tag}
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
 
                             <div className="mt-3 space-y-2">
                                 {renderScopeSelectorPanel('right')}
@@ -723,19 +910,22 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                         <div className={infoCardClass}>
                             <div className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-r from-[#E0E7FF]/40 via-white/10 to-[#DBEAFE]/40" />
                             <p className="text-xs text-[#94A3B8] mb-2">
-                                {uiLanguage === 'en-US' ? 'Quick Scope' : '快捷范围'}
+                                {uiLanguage === 'en-US' ? 'Quick Scope Selector' : '快捷刷题范围选择'}
                             </p>
-                            <div className="grid grid-cols-1 gap-2">
-                                {featuredQuickScopeOptions.map(option => (
+                            <div className="flex flex-wrap gap-2">
+                                {quickScopeButtonOptions.map((option, index) => (
                                     <button
                                         key={`quick-scope-${option.value}`}
                                         type="button"
                                         onClick={() => startReviewWithScope(option.value)}
                                         disabled={option.value === 'favorites' && favoriteCount === 0}
+                                        style={{
+                                            flexBasis: [48, 44, 56, 42, 50][index] ? `${[48, 44, 56, 42, 50][index]}%` : '48%'
+                                        }}
                                         className={`h-8 rounded-md border px-3 text-left text-xs transition-colors ${activeScope === option.value
                                             ? 'border-[#2563EB] bg-[#EFF6FF] text-[#1D4ED8]'
                                             : 'border-white/70 bg-white/75 text-[#334155] hover:bg-white'
-                                            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                            } disabled:opacity-50 disabled:cursor-not-allowed truncate`}
                                     >
                                         {option.label}
                                     </button>
@@ -745,24 +935,43 @@ export default function ReviewPage({ params }: ReviewPageProps) {
                     </aside>
 
                     <main className="order-1 xl:order-2 min-w-0">
-                        <div className="mx-auto max-w-4xl">
-                            <Flashcard
-                                card={currentCard}
-                                isFlipped={isFlipped}
-                                onFlip={flipCard}
-                                onMarkMastery={markMastery}
-                                onLoadAnswer={handleLoadAnswer}
-                                isAnswerLoading={answerLoadingIds.has(currentCard.id)}
-                            />
-
-                            <div className="mt-2">
-                                <FlashcardControls
-                                    currentIndex={session.cursor}
-                                    totalCount={session.queueCardIds.length}
-                                    onPrevious={goToPrevious}
-                                    onNext={goToNext}
+                        <div className="mx-auto max-w-4xl relative">
+                            <div className={`transition-opacity duration-300 ${isScopeSwitching ? 'opacity-45' : 'opacity-100'}`}>
+                                <Flashcard
+                                    card={currentCard}
+                                    isFlipped={isFlipped}
+                                    onFlip={flipCard}
+                                    onMarkMastery={markMastery}
+                                    onLoadAnswer={handleLoadAnswer}
+                                    isAnswerLoading={answerLoadingIds.has(currentCard.id)}
+                                    scopeLabel={currentScopeLabel}
+                                    isFavorite={isCurrentCardFavorite}
+                                    onToggleFavorite={toggleFavoriteForCurrentCard}
+                                    isFavoritePending={isFavoriteUpdating}
                                 />
+
+                                <div className="mt-2">
+                                    <FlashcardControls
+                                        currentIndex={session.cursor}
+                                        totalCount={session.queueCardIds.length}
+                                        onPrevious={goToPrevious}
+                                        onNext={goToNext}
+                                    />
+                                </div>
                             </div>
+
+                            {isScopeSwitching && (
+                                <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 rounded-2xl bg-white/40 backdrop-blur-[1px]">
+                                    <div className="relative h-20 w-20">
+                                        <div className="absolute inset-0 rounded-full border-2 border-[#93C5FD] border-t-transparent animate-spin" />
+                                        <div className="absolute inset-[14px] rounded-full border-2 border-[#3B82F6] border-b-transparent animate-spin [animation-duration:1.2s] [animation-direction:reverse]" />
+                                        <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#2563EB] animate-pulse" />
+                                    </div>
+                                    <p className="rounded-full border border-white/70 bg-white/75 px-3 py-1 text-xs text-[#334155]">
+                                        {uiLanguage === 'en-US' ? 'Switching scope...' : '切换刷题范围中...'}
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </main>
 

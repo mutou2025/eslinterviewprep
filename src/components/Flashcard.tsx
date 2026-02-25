@@ -4,6 +4,7 @@ import { useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeHighlight from 'rehype-highlight'
+import { Star } from 'lucide-react'
 import type { Card, MasteryStatus } from '@/types'
 import { useI18n } from '@/i18n/provider'
 import { getLocalizedCardContent } from '@/i18n/content'
@@ -17,6 +18,10 @@ interface FlashcardProps {
     showTags?: boolean
     onLoadAnswer?: () => void
     isAnswerLoading?: boolean
+    scopeLabel?: string
+    isFavorite?: boolean
+    onToggleFavorite?: () => void
+    isFavoritePending?: boolean
 }
 
 const masteryConfig: Record<MasteryStatus, { labelKey: 'mastery.new' | 'mastery.fuzzy' | 'mastery.canExplain' | 'mastery.solid'; color: string; bg: string }> = {
@@ -24,15 +29,6 @@ const masteryConfig: Record<MasteryStatus, { labelKey: 'mastery.new' | 'mastery.
     'fuzzy': { labelKey: 'mastery.fuzzy', color: 'text-[#F59E0B]', bg: 'bg-[#FEF3C7] hover:bg-[#FDE68A]' },
     'can-explain': { labelKey: 'mastery.canExplain', color: 'text-[#2563EB]', bg: 'bg-[#DBEAFE] hover:bg-[#BFDBFE]' },
     'solid': { labelKey: 'mastery.solid', color: 'text-[#10B981]', bg: 'bg-[#D1FAE5] hover:bg-[#A7F3D0]' }
-}
-
-
-const difficultyConfig: Record<string, { labelKey: 'difficulty.easy' | 'difficulty.mustKnow' | 'difficulty.hard' | 'difficulty.handWrite'; color: string }> = {
-    'easy': { labelKey: 'difficulty.easy', color: 'bg-green-100 text-green-700' },
-    'must-know': { labelKey: 'difficulty.mustKnow', color: 'bg-red-100 text-red-700' },
-    'hard': { labelKey: 'difficulty.hard', color: 'bg-[#DBEAFE] text-[#1D4ED8]' },
-    'hand-write': { labelKey: 'difficulty.handWrite', color: 'bg-yellow-100 text-yellow-700' }
-
 }
 
 const frequencyConfig: Record<string, { labelKey: 'frequency.high' | 'frequency.mid' | 'frequency.low'; color: string }> = {
@@ -48,12 +44,24 @@ export function Flashcard({
     onMarkMastery,
     showTags = true,
     onLoadAnswer,
-    isAnswerLoading = false
+    isAnswerLoading = false,
+    scopeLabel = '',
+    isFavorite = false,
+    onToggleFavorite,
+    isFavoritePending = false
 }: FlashcardProps) {
-    const { t, contentLanguage } = useI18n()
+    const { t, contentLanguage, uiLanguage } = useI18n()
     const cardContainerRef = useRef<HTMLDivElement>(null)
     const answerContentRef = useRef<HTMLDivElement>(null)
     const localized = getLocalizedCardContent(card, contentLanguage)
+    const frequencyLabel = frequencyConfig[card.frequency] ? t(frequencyConfig[card.frequency].labelKey) : card.frequency
+    const masteryLabel = t(masteryConfig[card.mastery].labelKey)
+    const masteryBadgeClass: Record<MasteryStatus, string> = {
+        new: 'bg-[#FEE2E2] text-[#B91C1C]',
+        fuzzy: 'bg-[#FEF3C7] text-[#B45309]',
+        'can-explain': 'bg-[#DBEAFE] text-[#1D4ED8]',
+        solid: 'bg-[#D1FAE5] text-[#047857]'
+    }
 
     // 翻转时自动滚动到顶部
     useEffect(() => {
@@ -97,23 +105,40 @@ export function Flashcard({
                         <div className="bg-white rounded-3xl shadow-lg min-h-[400px] flex flex-col">
                             {/* 标签区域 */}
                             {showTags && (
-                                <div className="flex flex-wrap gap-2 p-4 border-b border-[#E2E8F0]">
-                                    {/* 分类 */}
-                                    <span className="px-2 py-1 text-xs font-medium bg-[#DBEAFE] text-[#1D4ED8] rounded-full">
-                                        {card.categoryL3Id}
-                                    </span>
-                                    {/* 题型 */}
-                                    <span className="px-2 py-1 text-xs font-medium bg-[#F1F5F9] text-[#475569] rounded-full">
-                                        {card.questionType}
-                                    </span>
-                                    {/* 频率 */}
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${frequencyConfig[card.frequency]?.color || 'bg-[#F1F5F9]'}`}>
-                                        {frequencyConfig[card.frequency] ? t(frequencyConfig[card.frequency].labelKey) : card.frequency}
-                                    </span>
-                                    {/* 难度 */}
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${difficultyConfig[card.difficulty]?.color || 'bg-[#F1F5F9]'}`}>
-                                        {difficultyConfig[card.difficulty] ? t(difficultyConfig[card.difficulty].labelKey) : card.difficulty}
-                                    </span>
+                                <div className="flex items-start justify-between gap-3 p-4 border-b border-[#E2E8F0]">
+                                    <div className="min-w-0">
+                                        <p className="text-[11px] text-[#94A3B8]">
+                                            {uiLanguage === 'en-US' ? 'Review Scope' : '刷题范围'}
+                                        </p>
+                                        <p className="mt-1 truncate text-sm font-semibold text-[#1E293B]">
+                                            {scopeLabel || (uiLanguage === 'en-US' ? 'All Questions' : '全部面试题')}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${frequencyConfig[card.frequency]?.color || 'bg-[#F1F5F9] text-[#475569]'}`}>
+                                            {frequencyLabel}
+                                        </span>
+                                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${masteryBadgeClass[card.mastery]}`}>
+                                            {masteryLabel}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                onToggleFavorite?.()
+                                            }}
+                                            disabled={!onToggleFavorite || isFavoritePending}
+                                            className={`inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${isFavorite
+                                                ? 'border-[#F59E0B] bg-[#FEF3C7] text-[#B45309]'
+                                                : 'border-[#CBD5E1] bg-white text-[#64748B] hover:border-[#94A3B8] hover:text-[#334155]'
+                                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                            title={isFavorite
+                                                ? (uiLanguage === 'en-US' ? 'Remove from favorites' : '取消收藏')
+                                                : (uiLanguage === 'en-US' ? 'Add to favorites' : '加入收藏')}
+                                        >
+                                            <Star size={15} className={isFavorite ? 'fill-current' : ''} />
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
