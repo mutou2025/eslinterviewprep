@@ -604,7 +604,7 @@ export default function ReviewPage({ params }: ReviewPageProps) {
     )
 
     const totalQueueCount = session?.queueCardIds.length || 0
-    const reviewedCount = totalQueueCount > 0 ? session.cursor + 1 : 0
+    const reviewedCount = session && totalQueueCount > 0 ? session.cursor + 1 : 0
     const remainingCount = Math.max(0, totalQueueCount - reviewedCount)
     const progressPercent = totalQueueCount > 0 ? Math.min(100, Math.round((reviewedCount / totalQueueCount) * 100)) : 0
     const estimatedMinutes = Math.ceil((remainingCount * 75) / 60)

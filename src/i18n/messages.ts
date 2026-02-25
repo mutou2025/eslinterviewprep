@@ -313,6 +313,7 @@ export const messages = {
         'library.filterCancel': 'Cancel',
         'library.filterApply': 'Apply',
         'library.allCategories': 'All Categories',
+        'library.all': 'All',
         'library.selectAll': 'Select All',
         'library.deselectAll': 'Deselect All',
         'library.selectedCount': '{count} selected',

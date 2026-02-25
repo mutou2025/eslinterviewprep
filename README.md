@@ -160,23 +160,41 @@ npm run sync     # 同步上游题库到本地 JSON
 - 项目目前没有完整自动化测试；改动后建议手动回归：登录/登出、空库引导到 `/data-management`、导入题库、题库筛选（URL 持久化）、复习流程与掌握度更新。
 
 ## 提交规范
-1️⃣ 先同步 main
+1️⃣ 每次“准备 push / 准备提 PR”之前：同步 main（关键）
+1.1 更新本地 main（把 upstream 的最新同步到你自己的 fork main）
+```
+git fetch upstream
+git checkout main
+git pull origin main
+git merge upstream/main
+git push origin main
+// 这时fork（origin/main）就跟原仓库（upstream/main）一致/接近
+```
+1.2 让 feature 分支跟上最新 main
+```
+git checkout feature/lf-change
+git merge main
+git push
+git push -u origin feature/lf-change
+```
+
+2️⃣ 在 GitHub 上提 PR（推荐流程）
+```
+base：upstream/main（原仓库 main）
+
+compare：origin/feature/lf-change（你 fork 的分支）
+```
+3️⃣ PR 合并后你要做的收尾（很重要）
+3.1 同步本地main
+```
 git checkout main
 git fetch upstream
-git rebase upstream/main
+git merge upstream/main
 git push origin main
+```
 
-2️⃣ 新建功能分支
-git checkout -b feature/i18n-fix
-
-3️⃣ 改代码
-git add .
-git commit -m "feat: i18n"
-
-4️⃣ 推送分支
-git push -u origin feature/i18n-fix
-
-5️⃣ 用 feature 分支提 PR
+4️⃣
+5️⃣
 
 ## 9. 参考文档
 

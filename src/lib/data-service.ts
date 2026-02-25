@@ -226,7 +226,7 @@ function shouldFallbackToLegacyCardSelect(error: unknown): boolean {
 }
 
 async function runCardsSelectWithFallback<TData>(
-    queryFactory: (selectColumns: string) => Promise<{ data: TData; error: unknown }>,
+    queryFactory: (selectColumns: string) => PromiseLike<{ data: TData; error: unknown }>,
     includeAnswer: boolean
 ): Promise<{ data: TData; error: unknown }> {
     const firstSelect = includeAnswer ? CARD_SELECT_WITH_ANSWER : CARD_SELECT_SUMMARY
@@ -533,7 +533,7 @@ export async function getCardWithOverride(cardId: string): Promise<Card | undefi
         return undefined
     }
 
-    const card = toCard(cardRow as CardRow)
+    const card = toCard(cardRow as unknown as CardRow)
 
     if (!userId) return card
 
@@ -567,7 +567,7 @@ export async function getCardSummary(cardId: string): Promise<Card | undefined> 
         return undefined
     }
 
-    const card = toCard(cardRow as CardRow)
+    const card = toCard(cardRow as unknown as CardRow)
 
     if (!userId) return card
 
@@ -647,7 +647,7 @@ export async function getCardsByCategory(categoryL3Id: string): Promise<Card[]> 
         return []
     }
 
-    const cards = (cardRows as CardRow[]).map(toCard)
+    const cards = (cardRows as unknown as CardRow[]).map(toCard)
     if (!userId) return cards
 
     const cardIds = cards.map(c => c.id)
@@ -688,7 +688,7 @@ export async function getCardsByIds(cardIds: string[]): Promise<Card[]> {
         return []
     }
 
-    const cards = (cardRows as CardRow[]).map(toCard)
+    const cards = (cardRows as unknown as CardRow[]).map(toCard)
     if (!userId) return cards
 
     const { data: overrideRows } = await supabase
@@ -961,7 +961,7 @@ export async function syncCardSummaryCache(): Promise<void> {
         )
         if (error || !rows || rows.length === 0) break
 
-        const summaries: CardSummary[] = (rows as CardRow[]).map(row => ({
+        const summaries: CardSummary[] = (rows as unknown as CardRow[]).map(row => ({
             id: row.id,
             source: row.source as Card['source'],
             upstreamSource: (row.upstream_source as Card['upstreamSource']) || undefined,
@@ -1149,7 +1149,7 @@ export async function createUserCard(input: CreateUserCardInput): Promise<Card |
         return null
     }
 
-    return toCard(data as CardRow)
+    return toCard(data as unknown as CardRow)
 }
 
 export async function updateUserCardContent(
@@ -1193,7 +1193,7 @@ export async function updateUserCardContent(
         return null
     }
 
-    return toCard(data as CardRow)
+    return toCard(data as unknown as CardRow)
 }
 
 export async function updateList(listId: string, updates: { name?: string; cardIds?: string[] }): Promise<void> {

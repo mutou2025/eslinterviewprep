@@ -8,7 +8,11 @@ import { getCardSummariesPageCached, getCategories, getSolvedCardIdsCached, init
 import { useI18n } from '@/i18n/provider'
 import { getLocalizedCardContent } from '@/i18n/content'
 import { TECHNICAL_TRACKS, getTrackCategoryIds, isTechnicalTrackId } from '@/lib/library-tracks'
-import { buildTechnicalKnowledgeCategories, classifyCardToKnowledgePoint } from '@/lib/technical-taxonomy'
+import {
+    buildTechnicalKnowledgeCategories,
+    classifyCardToKnowledgePoint,
+    type TechnicalKnowledgePoint
+} from '@/lib/technical-taxonomy'
 import type { Card, Category } from '@/types'
 
 const PAGE_SIZE = 40
@@ -155,7 +159,7 @@ export default function LibraryPage() {
 
     const allKnowledgePoints = useMemo(() => {
         const seen = new Set<string>()
-        const points: Array<{ id: string; name: string; nameEn: string }> = []
+        const points: TechnicalKnowledgePoint[] = []
         for (const category of knowledgeCategories) {
             for (const point of category.points) {
                 if (seen.has(point.id)) continue
